@@ -11,8 +11,18 @@ export const NOTE_COLORS = {
   green: ['#DDE8D6', '#D6E4CF'],
 };
 
+// วันที่ dd ของเดือน (เดือนสั้นกว่า = วันสุดท้ายของเดือน)
+const dayIn = (y, m, dd) => new Date(y, m, Math.min(dd, new Date(y, m + 1, 0).getDate()));
+export const repLabel = x => x.monthly ? 'ทุกเดือน' : x.yearly ? 'ทุกปี' : '';
+
 export function nextOccurrence(item, from) {
   const d = fromKey(item.date);
+  if (item.monthly) {
+    if (toKey(d) >= toKey(from)) return d;
+    let n = dayIn(from.getFullYear(), from.getMonth(), d.getDate());
+    if (toKey(n) < toKey(from)) n = dayIn(from.getFullYear(), from.getMonth() + 1, d.getDate());
+    return n;
+  }
   if (!item.yearly) return d;
   let n = new Date(from.getFullYear(), d.getMonth(), d.getDate());
   if (toKey(n) < toKey(from)) n = new Date(from.getFullYear() + 1, d.getMonth(), d.getDate());
@@ -39,6 +49,28 @@ export function impNoteHtml(x, inDays, i = 0, at = x.at) {
   const left = inDays == null || inDays < 0 ? '' : inDays === 0 ? 'วันนี้' : `อีก ${inDays} วัน`;
   return `<div class="imp-note" style="background:linear-gradient(180deg,${c1},${c2});transform:rotate(${i % 2 ? 1 : -1}deg)">${PIN}
     <div><div class="imp-title">${esc(x.title)}</div><div class="imp-date">${at.getDate()} ${MONTHS_SHORT[at.getMonth()]}</div></div>
-    <div class="imp-foot"><span class="imp-left">${left}</span>${x.yearly ? '<span class="imp-chip">ทุกปี</span>' : ''}</div>
+    <div class="imp-foot"><span class="imp-left">${left}</span>${repLabel(x) ? `<span class="imp-chip">${repLabel(x)}</span>` : ''}</div>
   </div>`;
+}
+
+// ครั้งล่าสุดที่ผ่านมาแล้ว (ก่อนวันนี้) · null = ยังไม่เคยเกิด
+export function lastOccurrence(x, t0) {
+  const d = fromKey(x.date);
+  if (x.monthly) {
+    let p = dayIn(t0.getFullYear(), t0.getMonth(), d.getDate());
+    if (p >= t0) p = dayIn(t0.getFullYear(), t0.getMonth() - 1, d.getDate());
+    return p >= d ? p : null;
+  }
+  if (!x.yearly) return d < t0 ? d : null;
+  let p = new Date(t0.getFullYear(), d.getMonth(), d.getDate());
+  if (p >= t0) p = new Date(t0.getFullYear() - 1, d.getMonth(), d.getDate());
+  return p >= d ? p : null;
+}
+// ตรงกับวัน key ไหม (ทุกปี = ทุกปี · ทุกเดือน = ตั้งแต่วันเริ่ม · ครั้งเดียว)
+export function impMatches(x, key) {
+  if (x.yearly && !x.monthly) return x.date.slice(5) === key.slice(5); // ทุกปี: นับทุกปี (เช่น วันเกิด)
+  if (key < x.date) return false;
+  if (x.monthly) { const k = fromKey(key), dd = fromKey(x.date).getDate(); return toKey(dayIn(k.getFullYear(), k.getMonth(), dd)) === key; }
+  if (x.yearly) return x.date.slice(5) === key.slice(5);
+  return x.date === key;
 }

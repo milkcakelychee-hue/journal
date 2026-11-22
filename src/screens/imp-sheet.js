@@ -15,7 +15,7 @@ const dLabel = k => { const d = fromKey(k); return `${d.getDate()} ${MONTHS_SHOR
 
 export function openImpSheet(onSaved, id, date) {
   const old = id ? getData().importantDates.find(x => x.id === id) : null;
-  const f = old ? { title: old.title, date: old.date, yearly: !!old.yearly, noteColor: old.noteColor || 'yellow' } : { title: '', date: date || todayKey(), yearly: false, noteColor: 'yellow' };
+  const f = old ? { title: old.title, date: old.date, yearly: !!old.yearly, monthly: !!old.monthly, noteColor: old.noteColor || 'yellow' } : { title: '', date: date || todayKey(), yearly: false, monthly: false, noteColor: 'yellow' };
   let view = 'form', names = {};
   const namesPage = () => `<div class="im-names">${Object.entries(NOTE_COLORS).map(([k, [a, b]]) => `<label class="im-nrow"><span class="im-nsw" style="background:linear-gradient(180deg,${a},${b})"></span><input type="text" class="ea-input" maxlength="20" aria-label="ความหมายของสี${CNAME[k]}" placeholder="${CNAME[k]}" value="${esc(names[k] || '')}" data-im-name="${k}"></label>`).join('')}</div>
     <div class="pa-hint" style="margin-top:10px">ตั้งว่าแต่ละสีหมายถึงอะไร เช่น วันเกิด เดดไลน์</div>
@@ -23,8 +23,7 @@ export function openImpSheet(onSaved, id, date) {
   const body = () => view === 'names' ? namesPage() : `<div class="hn">
       <div><div class="ea-lab">ชื่อ</div><input type="text" class="ea-input" aria-label="ชื่อวันสำคัญ" value="${esc(f.title)}" data-im-title></div>
       <div><div class="ea-lab">วันที่</div><label class="ea-time pl-date"><span class="ea-ico">${CAL}</span><span style="flex:1">${dLabel(f.date)}</span><input type="date" class="td-dateinput" aria-label="วันที่" value="${f.date}" data-im-date></label></div>
-      <div class="ea-sw-row"><div><div class="ea-sw-t">ทุกปี</div><div class="ea-sw-s">วนซ้ำทุกปีในวันเดียวกัน</div></div>
-        <button type="button" role="switch" aria-checked="${f.yearly}" aria-label="ทุกปี" class="ea-sw${f.yearly ? ' on' : ''}" data-im-yearly><span></span></button></div>
+      <div><div class="ea-lab">วนซ้ำ</div><div class="seg hn-seg">${[['n', 'ไม่วน'], ['m', 'ทุกเดือน'], ['y', 'ทุกปี']].map(([k, t]) => { const on = k === (f.monthly ? 'm' : f.yearly ? 'y' : 'n'); return `<button type="button" class="seg-btn${on ? ' on' : ''}" aria-pressed="${on}" data-im-rep="${k}">${t}</button>`; }).join('')}</div></div>
       <div><div class="im-lab-row"><span class="ea-lab" style="margin:0">สีโน้ต</span><button type="button" class="im-edit" data-im-names>${PEN}แก้ไข</button></div><div class="im-colors">${Object.entries(NOTE_COLORS).map(([k, [a, b]]) => `<button type="button" class="im-color${f.noteColor === k ? ' on' : ''}" aria-label="โน้ตสี${CNAME[k]} · ${esc(cname(k))}" aria-pressed="${f.noteColor === k}" data-im-color="${k}"><span class="im-sw" style="background:linear-gradient(180deg,${a},${b})"></span><span class="im-cn">${esc(cname(k))}</span></button>`).join('')}</div></div>
     </div>
     <div class="${old ? 'btn-row' : ''}" style="margin-top:20px">${old ? '<button type="button" class="btn-secondary" data-im-del>ลบ</button>' : ''}<button type="button" class="btn-primary" data-im-save>บันทึก</button></div>`;
@@ -36,7 +35,7 @@ export function openImpSheet(onSaved, id, date) {
       el.addEventListener('input', e => { if (e.target.matches('[data-im-title]')) f.title = e.target.value; if (e.target.dataset.imName) names[e.target.dataset.imName] = e.target.value; });
       el.addEventListener('change', e => { if (e.target.matches('[data-im-date]') && e.target.value) { f.date = e.target.value; render(); } });
       el.addEventListener('click', async e => {
-        const b = e.target.closest('[data-im-yearly],[data-im-color],[data-im-save],[data-im-del],[data-im-names],[data-im-nsave]');
+        const b = e.target.closest('[data-im-rep],[data-im-color],[data-im-save],[data-im-del],[data-im-names],[data-im-nsave]');
         if (!b) return;
         const ds = b.dataset;
         if (ds.imNames !== undefined) { names = { ...(getData().settings.noteColorNames || {}) }; view = 'names'; head('ความหมายของสี', back); render(); return; }
@@ -44,7 +43,7 @@ export function openImpSheet(onSaved, id, date) {
           const clean = Object.fromEntries(Object.entries(names).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v));
           update(d => { d.settings.noteColorNames = clean; }); back(); return;
         }
-        if (ds.imYearly !== undefined) f.yearly = !f.yearly;
+        if (ds.imRep) { f.yearly = ds.imRep === 'y'; f.monthly = ds.imRep === 'm'; }
         else if (ds.imColor) f.noteColor = ds.imColor;
         else if (ds.imDel !== undefined) {
           if (!await confirmDelete({ title: `ลบ "${old.title}"?` })) return;
@@ -53,7 +52,7 @@ export function openImpSheet(onSaved, id, date) {
         } else {
           const title = f.title.trim();
           if (!title) { el.querySelector('[data-im-title]').focus(); return; }
-          const rec = { title, date: f.date, yearly: f.yearly, noteColor: f.noteColor };
+          const rec = { title, date: f.date, yearly: f.yearly, monthly: f.monthly, noteColor: f.noteColor };
           update(d => { const ex = old && d.importantDates.find(x => x.id === old.id); if (ex) Object.assign(ex, rec); else d.importantDates.push({ id: newId(), ...rec }); });
           close(); onSaved?.(); return;
         }

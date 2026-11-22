@@ -861,3 +861,7 @@ button.ea-date { border: 0; margin: 0; font-family: inherit; text-align: left; }
 .mo-panelhead .mo-acts .hol-add { padding: 0 10px; }
 .add-row { display: flex; gap: 6px; margin: 6px 4px 12px; overflow-x: auto; scrollbar-width: none; }
 .add-row .hol-add { height: 32px; border-radius: 16px; padding: 0 12px; flex: none; }
+.ia-acts { display: flex; gap: 4px; margin-left: 8px; flex: none; }
+.ia-btn { width: 32px; height: 32px; border: 0; border-radius: 16px; background: var(--gray-soft); color: var(--ink); display: flex; align-items: center; justify-content: center; padding: 0; }
+.mo-imps .ip-cell { border: 0; background: none; padding: 0; font-family: inherit; text-align: left; color: inherit; }
+.mo-imps .ip-cell .imp-note { width: auto; }

@@ -2,7 +2,9 @@
 import { getData } from '../store.js';
 import { DAYS_SHORT, MONTHS, MONTHS_SHORT, fromKey } from '../lib/date-th.js';
 import { openSheet } from '../ui/sheet.js';
-import { nextOccurrence, impNoteHtml, NOTE_COLORS } from '../lib/important.js';
+import { nextOccurrence, lastOccurrence, impNoteHtml, NOTE_COLORS, repLabel } from '../lib/important.js';
+import { getData as _gd, update } from '../store.js';
+import { confirmDelete } from '../ui/confirm.js';
 import { openImpSheet } from './imp-sheet.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -10,6 +12,8 @@ const BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke
 const PLUS = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5 V19"/><path d="M5 12 H19"/></svg>';
 const CHEV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6 L15.5 12 L9.5 18"/></svg>';
 const PIN = '<svg class="imp-pin2" width="18" height="24" viewBox="0 0 16 20" aria-hidden="true"><circle cx="8" cy="5" r="4" fill="#1C1C1E"/><path d="M8 9 V18" stroke="#1C1C1E" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+const PEN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 H8 L19 9 L15 5 L4 16 Z"/><path d="M13 7 L17 11"/></svg>';
+const TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7 H20"/><path d="M9 7 V4.5 H15 V7"/><path d="M6 7 L7 20 H17 L18 7"/></svg>';
 const STACK = [['0px', 8, -2, 1], ['10px', 14, 2.5, 1], ['22px', 22, 6, 0.85]];
 
 const st = { i: 0 };
@@ -26,7 +30,7 @@ function bigNote(x, k) {
   const [l, top, rot, op] = STACK[k];
   return `<button type="button" class="ip-big" style="left:calc(50% - 118px + ${l});top:${top}px;transform:rotate(${rot}deg);opacity:${op};z-index:${3 - k};background:linear-gradient(180deg,${c1},${c2})" ${k === 0 ? `data-ip-edit="${x.id}"` : 'tabindex="-1" aria-hidden="true"'}>${PIN}
     <span><span class="ip-bt">${esc(x.title)}</span><span class="ip-bd">${x.at.getDate()} ${MONTHS_SHORT[x.at.getMonth()]}</span></span>
-    <span class="imp-foot"><span class="ip-bl">${x.inDays === 0 ? 'วันนี้' : `อีก ${x.inDays} วัน`}</span>${x.yearly ? '<span class="imp-chip">ทุกปี</span>' : ''}</span></button>`;
+    <span class="imp-foot"><span class="ip-bl">${x.inDays === 0 ? 'วันนี้' : `อีก ${x.inDays} วัน`}</span>${repLabel(x) ? `<span class="imp-chip">${repLabel(x)}</span>` : ''}</span></button>`;
 }
 
 export function renderSideImp() {
@@ -62,7 +66,7 @@ export function mountSideImp(root, rerender) {
     if (moved) { moved = false; return; }
     if (e.target.closest('[data-ip-back]')) { location.hash = location.hash.split('/')[2] === 'today' ? 'today' : 'sides'; return; }
     if (e.target.closest('[data-ip-add]')) { openImpSheet(rerender); return; }
-    if (e.target.closest('[data-ip-all]')) { openImpList('all'); return; }
+    if (e.target.closest('[data-ip-all]')) { openImpList('all', rerender); return; }
     if (e.target.closest('[data-ip-hist]')) { openImpList('hist'); return; }
     const ed = e.target.closest('[data-ip-edit]');
     if (ed) { openImpSheet(rerender, ed.dataset.ipEdit); return; }
@@ -70,14 +74,8 @@ export function mountSideImp(root, rerender) {
 }
 
 // ป๊อปอัปรายการ · บอร์ด Imp-All (ที่จะถึง) / Imp-History (ที่ผ่านมาแล้ว ล่าสุดอยู่บน) · ดูอย่างเดียว
-function lastOccurrence(x, t0) {
-  const d = fromKey(x.date);
-  if (!x.yearly) return d < t0 ? d : null;
-  let p = new Date(t0.getFullYear(), d.getMonth(), d.getDate());
-  if (p >= t0) p = new Date(t0.getFullYear() - 1, d.getMonth(), d.getDate());
-  return p >= d ? p : null;
-}
-function openImpList(kind) {
+// วันสำคัญทั้งหมด: แต่ละแถวมีปุ่มแก้/ลบ · แก้ = ปิดรายการ → เปิดแผ่นแก้ → บันทึกแล้วกลับมารายการ (ไม่ซ้อน sheet)
+function openImpList(kind, onChange) {
   const d = getData(), t = new Date(), t0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
   const past = kind === 'hist';
   const rows = past
@@ -89,12 +87,22 @@ function openImpList(kind) {
     if (k !== ym) { html += `<div class="ia-m">${k}</div>`; ym = k; }
     const c = (NOTE_COLORS[x.noteColor] || NOTE_COLORS.yellow)[1];
     const right = past ? `${x.n} วันก่อน` : x.n === 0 ? 'วันนี้' : `อีก ${x.n} วัน`;
-    html += `<div class="ia-row${past ? ' past' : ''}"><span class="ia-sw" style="background:${c}"></span><span class="ia-tx"><span class="ia-t">${esc(x.title)}</span><span class="ia-s">${DAYS_SHORT[x.at.getDay()]} ${x.at.getDate()} ${MONTHS_SHORT[x.at.getMonth()]}${x.yearly ? ' · ทุกปี' : ''}</span></span><span class="ia-r">${right}</span></div>`;
+    html += `<div class="ia-row${past ? ' past' : ''}"><span class="ia-sw" style="background:${c}"></span><span class="ia-tx"><span class="ia-t">${esc(x.title)}</span><span class="ia-s">${DAYS_SHORT[x.at.getDay()]} ${x.at.getDate()} ${MONTHS_SHORT[x.at.getMonth()]}${repLabel(x) ? ` · ${repLabel(x)}` : ''}</span></span><span class="ia-r">${right}</span>${past ? '' : `<span class="ia-acts"><button type="button" class="ia-btn" aria-label="แก้ ${esc(x.title)}" data-ia-edit="${x.id}">${PEN}</button><button type="button" class="ia-btn" aria-label="ลบ ${esc(x.title)}" data-ia-del="${x.id}">${TRASH}</button></span>`}</div>`;
   }
   openSheet({
     title: past ? 'ประวัติวันสำคัญ' : 'วันสำคัญทั้งหมด',
     body: () => `<div class="ia">${html}</div>`,
-    mount(el) {
+    mount(el, close) {
+      el.addEventListener('click', async e => {
+        const ed = e.target.closest('[data-ia-edit]'), dl = e.target.closest('[data-ia-del]');
+        if (ed) { close(); openImpSheet(() => { onChange?.(); openImpList(kind, onChange); }, ed.dataset.iaEdit); return; }
+        if (dl) {
+          const x = _gd().importantDates.find(i => i.id === dl.dataset.iaDel); if (!x) return;
+          if (!await confirmDelete({ title: `ลบ "${x.title}"?` })) return;
+          update(dd => { dd.importantDates = dd.importantDates.filter(i => i.id !== x.id); });
+          close(); onChange?.(); openImpList(kind, onChange);
+        }
+      });
       el.classList.add('sh-tall');
       el.querySelector('.sh-title').insertAdjacentHTML('afterend', `<div class="ia-sub">${past ? 'ที่ผ่านมาแล้ว · ล่าสุดอยู่บน' : `ที่จะถึง · ${rows.length} รายการ`}</div>`);
     },

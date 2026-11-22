@@ -4,7 +4,7 @@ import { DAYS, DAYS_SHORT, MONTHS, MONTHS_SHORT, toKey, fromKey, todayKey, weekO
 import { renderTodoCard, bindTodo, setTodoDay } from './todo.js';
 import { renderEventsSection } from './events-today.js';
 import { renderQuickNotesToday, openQuickNote } from './quicknote.js';
-import { nextOccurrence, impNoteHtml, IMP_DOT, IMP_TEXT, NOTE_COLORS } from '../lib/important.js';
+import { impMatches, nextOccurrence, impNoteHtml, IMP_DOT, IMP_TEXT, NOTE_COLORS } from '../lib/important.js';
 import { eventsOn } from './events-today.js';
 import { openEventSheet } from './event-sheet.js';
 import { catOf } from '../lib/categories.js';
@@ -21,9 +21,7 @@ resetCalendar();
 
 // วันสำคัญที่ตรงกับวัน key (รวมแบบทุกปี)
 export function importantOn(d, key) {
-  const day = fromKey(key);
-  return d.importantDates.filter(x => toKey(x.yearly ? nextOccurrence(x, new Date(day.getFullYear(), 0, 1)) : fromKey(x.date)) === key
-    || (x.yearly && x.date.slice(5) === key.slice(5)));
+  return d.importantDates.filter(x => impMatches(x, key));
 }
 const hasEntry = (d, k) => d.events.some(e => e.startDate <= k && k <= (e.endDate || e.startDate)) || d.todos.some(t => t.date === k) || d.quickNotes.some(n => n.date === k);
 
@@ -182,7 +180,7 @@ function monthView(d) {
       ${ADD_ROW}
       <div class="mo-panel">
         ${tagRow(d, st.sel, 'margin:0 0 12px')}
-        ${imps.length ? `<div class="mo-imps">${imps.map((x, i) => impNoteHtml(x, Math.round((sel - t0) / 864e5), i, sel)).join('')}</div>` : ''}
+        ${imps.length ? `<div class="mo-imps">${imps.map((x, i) => `<button type="button" class="ip-cell" aria-label="แก้ ${esc(x.title)}" data-imp-edit="${x.id}">${impNoteHtml(x, Math.round((sel - t0) / 864e5), i, sel)}</button>`).join('')}</div>` : ''}
         ${eventsListHtml(d, st.sel)}
       </div>
     </div>`;
@@ -234,6 +232,8 @@ export function mountCalendar(root, rerenderPage) {
   bindTodo(root, () => { root.querySelector('#todo-slot').innerHTML = renderTodoCard(); });
   root.addEventListener('click', e => {
     const ho = e.target.closest('[data-hol-add],[data-hol-open]');
+    const ie = e.target.closest('[data-imp-edit]');
+    if (ie) { openImpSheet(rerenderPage, ie.dataset.impEdit); return; }
     if (e.target.closest('[data-imp-add]')) { openImpSheet(rerenderPage, null, st.sel); return; }
     if (e.target.closest('[data-wfh-add]')) { openWfhSheet(rerenderPage, st.sel); return; }
     if (ho) { openHolidaySheet(rerenderPage, ho.dataset.holOpen ? { id: ho.dataset.holOpen } : { date: st.sel }); return; }
