@@ -36,3 +36,230 @@ body::before {
 .tab-lb { font-family: var(--font-body); font-size: 12px; font-weight: 500; line-height: 18px; }
 .tab.on { color: var(--ink); }
 .tab.on .tab-lb { font-size: 13px; font-weight: 600; }
+
+/* หน้าวันนี้ · บอร์ด Main */
+.today { display: flex; flex-direction: column; gap: 16px; }
+.wk { padding-bottom: 12px; }
+.wk-title { height: 28px; margin-bottom: 8px; padding: 0 4px; display: flex; align-items: center; font-family: var(--font-head); font-size: 16px; font-weight: 500; }
+.wk-row { display: flex; gap: 2px; }
+.wk-day {
+  flex: 1; min-width: 0; height: 72px; box-sizing: border-box; border: 0; border-radius: 12px;
+  background: transparent; padding: 8px 0; margin: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px;
+  color: var(--fade);
+}
+.wk-dn { font-family: var(--font-body); font-size: 13px; font-weight: 400; line-height: 18px; }
+.wk-num { font-family: var(--font-head); font-size: 17px; font-weight: 500; line-height: 24px; }
+.wk-dot { width: 5px; height: 5px; border-radius: 3px; background: transparent; }
+.wk-day.past .wk-dot { opacity: .45; }
+.wk-day.today { background: #FFFFFF; box-shadow: 0 0 0 1px #E4E4E7; color: var(--ink); }
+.wk-day.today .wk-dn, .wk-day.today .wk-num { font-weight: 600; }
+
+/* หัวส่วน */
+.sec-head { display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 0 0 4px; }
+.h-sec { margin: 0; font-family: var(--font-head); font-size: 16px; font-weight: 500; line-height: 28px; }
+.sec-more { width: 44px; height: 44px; margin: -6px -10px -6px 0; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+
+/* โน้ตวันสำคัญ · บอร์ด Main */
+.imp-row { margin: 8px calc(-1 * var(--gutter)) 0; padding: 14px calc(var(--gutter) + 4px) 12px; display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; }
+.imp-row::-webkit-scrollbar { display: none; }
+.imp-note {
+  position: relative; width: 166px; height: 112px; box-sizing: border-box; padding: 18px 14px 12px;
+  border-radius: 3px; flex: none; box-shadow: 0 3px 8px rgba(0,0,0,0.10);
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.imp-pin { position: absolute; top: -12px; left: 75px; }
+.imp-title { font-family: var(--font-head); font-size: 16px; font-weight: 600; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.imp-date { font-size: 14px; line-height: 20px; color: #46464B; }
+.imp-foot { display: flex; align-items: center; justify-content: space-between; }
+.imp-left { font-family: var(--font-head); font-size: 14px; font-weight: 600; }
+.imp-chip { height: 22px; padding: 0 9px; border-radius: 6px; background: rgba(255,255,255,0.65); display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; }
+
+/* การ์ดทั่วไป */
+.card { background: var(--card); border-radius: var(--radius-card); box-shadow: var(--card-ring); box-sizing: border-box; }
+
+/* To do */
+.td-card { padding: 8px 16px 2px; }
+.td-head { display: flex; align-items: center; gap: 8px; height: 32px; }
+.td-up { margin: -6px -10px -6px -4px; }
+.td-count { font-size: 13px; color: var(--muted); }
+.td-swipe { position: relative; overflow: hidden; }
+.td-swipe[data-line] { border-top: 1px solid #ECECEF; }
+.td-actions { position: absolute; top: 0; right: 0; bottom: 0; display: flex; }
+.td-act { width: 72px; border: 0; margin: 0; padding: 0; font-size: 15px; font-weight: 600; }
+.td-act.edit { background: #E6E6EA; color: var(--ink); }
+.td-act.del { background: var(--danger); color: #FFF; }
+.td-row { position: relative; background: var(--card); transition: transform .2s ease; display: flex; align-items: center; gap: 12px; min-height: 44px; box-sizing: border-box; padding: 4px 0; }
+.td-main { flex: 1; min-width: 0; }
+.td-title { display: block; font-size: 15px; font-weight: 500; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.td-title.done { color: var(--fade); text-decoration: line-through; }
+.td-time { font-size: 13px; line-height: 18px; color: var(--muted); flex: none; }
+.td-time.done { color: #C2C2C7; }
+.td-check { width: 44px; height: 44px; border: 0; background: none; padding: 0; margin: -10px -9px -10px 0; display: flex; align-items: center; justify-content: center; flex: none; }
+.td-box { width: 26px; height: 26px; box-sizing: border-box; border-radius: 13px; border: 1.5px solid #C9C9CE; display: block; flex: none; }
+.td-box.on { border: 0; background: var(--ink); color: #FFF; display: flex; align-items: center; justify-content: center; }
+.td-box.dashed { border-style: dashed; }
+.td-empty { height: 44px; display: flex; align-items: center; font-size: 14px; color: var(--fade); }
+.td-addline { width: 100%; height: 42px; border: 0; border-top: 1px solid #ECECEF; background: none; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 500; color: var(--ink); }
+.td-add { display: flex; align-items: center; gap: 8px; height: 52px; border-top: 1px solid #ECECEF; }
+.td-add[data-first] { border-top: 0; }
+.td-input { flex: 1; min-width: 0; height: 40px; box-sizing: border-box; border: 0; border-radius: 10px; background: var(--gray-soft); padding: 0 12px; font-size: 16px; color: var(--ink); outline: none; }
+.td-sq { position: relative; border: 0; padding: 0; margin: 0; font-family: inherit; min-width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; background: var(--gray-soft); display: flex; align-items: center; justify-content: center; color: var(--muted); flex: none; font-size: 13px; }
+.td-sq.set { padding: 0 8px; color: var(--ink); }
+.td-sq.open { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.td-dateinput { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
+.td-addbtn { height: 40px; border: 0; border-radius: 10px; background: var(--ink); color: #FFF; padding: 0 14px; margin: 0; font-size: 15px; font-weight: 600; flex: none; }
+.td-collapsed { padding: 6px 8px 6px 16px; }
+.td-bar { display: flex; align-items: center; gap: 8px; height: 40px; }
+.td-badge { height: 24px; padding: 0 10px 0 8px; border-radius: 12px; background: #E2F1E1; color: #4B8A47; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: none; }
+.td-expand { width: 44px; height: 44px; border: 0; background: none; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ink); flex: none; }
+
+/* ตัวเลือกเวลา 24 ชม. */
+.tw { padding: 4px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tw-wheel { position: relative; display: flex; align-items: center; gap: 4px; height: 108px; }
+.tw-band { position: absolute; left: -12px; right: -12px; top: 36px; height: 36px; border-radius: 10px; background: var(--gray-soft); pointer-events: none; }
+.tw-col { position: relative; width: 64px; height: 108px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+.tw-col::-webkit-scrollbar { display: none; }
+.tw-pad { height: 36px; }
+.tw-item { height: 36px; line-height: 36px; text-align: center; scroll-snap-align: center; font-family: var(--font-head); font-size: 20px; font-weight: 500; }
+.tw-colon { position: relative; font-family: var(--font-head); font-size: 20px; font-weight: 500; }
+.tw-clear { border: 0; background: none; padding: 6px 10px; font-size: 14px; color: var(--muted); }
+
+/* ป๊อปอัปยืนยัน · Side-DrugDelete */
+.cf-back { position: fixed; inset: 0; z-index: 100; background: rgba(28,28,30,0.30); display: flex; align-items: center; justify-content: center; }
+.cf { width: 290px; background: #FFF; border-radius: 18px; padding: 22px 20px 16px; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0,0,0,0.25); text-align: center; }
+.cf-ic { width: 44px; height: 44px; border-radius: 22px; background: #FBE3E0; color: var(--danger); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.cf-t { margin: 0; font-family: var(--font-head); font-size: 17px; font-weight: 500; line-height: 26px; }
+.cf-b { margin: 6px 0 18px; font-size: 14px; line-height: 21px; color: var(--muted); }
+.cf-btns { display: flex; gap: 8px; }
+.cf-btns button { flex: 1; height: 46px; border: 0; border-radius: 12px; font-size: 16px; font-weight: 600; margin: 0; }
+.cf-no { background: var(--gray-soft); color: var(--ink); }
+.cf-yes { background: var(--danger); color: #FFF; }
+
+/* กิจกรรมวันนี้ · บอร์ด Main */
+.ev-sec { padding: 0 4px; }
+.ev-head { display: flex; align-items: center; justify-content: space-between; height: 32px; }
+.ev-hl { display: flex; align-items: baseline; gap: 8px; }
+.ev-sub { font-size: 13px; color: var(--muted); }
+.ev-add { width: 44px; height: 44px; border: 0; background: none; padding: 0; margin: -6px -6px -6px 0; display: flex; align-items: center; justify-content: center; flex: none; }
+.ev-add > span { width: 32px; height: 32px; border-radius: 16px; background: var(--ink); color: #FFF; display: flex; align-items: center; justify-content: center; }
+.ev-list { margin-top: 8px; }
+.ev-card { position: relative; margin-bottom: 10px; border-radius: 10px; background: #FFF; box-shadow: 0 0 0 1px #EDEDF0, 0 3px 10px rgba(0,0,0,0.05); }
+.ev-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 10px 0 0 10px; }
+.ev-btn { width: 100%; box-sizing: border-box; border: 0; background: none; margin: 0; padding: 12px 18px 12px 16px; text-align: left; display: block; color: var(--ink); }
+.ev-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 22px; }
+.ev-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-time { font-size: 13px; color: var(--muted); flex: none; }
+.ev-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.ev-chip { height: 22px; padding: 0 8px 0 6px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; max-width: 150px; }
+.ev-chip-ic { display: flex; }
+.ev-chip-tx { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-empty { margin-top: 8px; height: 56px; border-radius: 12px; box-shadow: 0 0 0 1px #EDEDF0; background: #FFF; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--fade); }
+
+/* ป้าย 2×2 · บอร์ด Main */
+.tl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tl { width: 100%; height: 124px; box-sizing: border-box; border: 0; border-radius: 16px; background: #FFF; box-shadow: var(--card-ring); padding: 28px 6px 10px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; color: var(--ink); }
+.tl-arrow { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 12px; background: var(--ink); color: #FFF; display: flex; align-items: center; justify-content: center; }
+.tl-ic { display: flex; }
+.tl-lb { font-size: 15px; font-weight: 500; line-height: 24px; white-space: nowrap; }
+
+/* sheet · บอร์ด Today-Expanded */
+.sh-back { position: fixed; inset: 0; z-index: 60; background: rgba(28,28,30,0.38); display: flex; align-items: flex-end; }
+.sheet { width: 100%; max-height: 92lvh; overflow-y: auto; background: #FFF; border-radius: 20px 20px 0 0; padding: 8px 20px calc(env(safe-area-inset-bottom) + 20px); box-sizing: border-box; animation: sh-up .22s ease; }
+@keyframes sh-up { from { transform: translateY(40px); opacity: .6; } }
+body.sh-open { overflow: hidden; }
+.sh-grip { width: 36px; height: 4px; border-radius: 2px; background: #D1D1D6; margin: 0 auto 4px; }
+.sh-head { display: flex; align-items: center; justify-content: space-between; height: 44px; }
+.sh-title { margin: 0; font-family: var(--font-head); font-size: 18px; font-weight: 500; line-height: 28px; }
+.sh-x { width: 44px; height: 44px; border: 0; background: none; padding: 0; margin: 0 -10px 0 0; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+
+/* ช่องกรอกทั่วไป */
+.field-btn { display: flex; align-items: center; gap: 10px; width: 100%; height: 48px; box-sizing: border-box; border: 0; border-radius: 12px; background: var(--gray-soft); padding: 0 14px; margin: 12px 0 0; font-size: 15px; color: var(--ink); text-align: left; }
+.field-btn.active { background: #FFF; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.field-ic { display: flex; color: var(--muted); }
+.field-lb { font-size: 12px; color: var(--muted); display: block; }
+.btn-primary { width: 100%; height: 52px; border: 0; border-radius: 12px; background: var(--ink); color: #FFF; font-size: 17px; font-weight: 600; padding: 0; }
+.qn-text { width: 100%; height: 96px; box-sizing: border-box; border: 0; border-radius: 12px; background: var(--gray-soft); padding: 12px 14px; font-size: 16px; line-height: 24px; color: var(--ink); resize: none; display: block; outline: none; }
+.qn-text.short { height: 88px; }
+
+/* ปฏิทินย่อ · บอร์ด Today-Many */
+.mc { background: var(--gray-soft); border-radius: 12px; padding: 6px 8px 8px; box-sizing: border-box; }
+.mc-head { display: flex; align-items: center; justify-content: space-between; height: 36px; }
+.mc-title { padding-left: 6px; font-size: 15px; font-weight: 500; }
+.mc-nav { width: 44px; height: 36px; border: 0; background: none; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.mc-row { display: flex; }
+.mc-dn { flex: 1; text-align: center; font-size: 12px; line-height: 24px; color: var(--muted); }
+.mc-day { flex: 1; height: 40px; border: 0; background: none; padding: 0; display: flex; align-items: center; justify-content: center; }
+.mc-day > span { width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 400; color: var(--ink); }
+.mc-day > span.out { color: var(--fade); }
+.mc-day > span.today { box-shadow: inset 0 0 0 1.5px var(--ink); font-weight: 600; }
+.mc-day > span.sel { background: var(--ink); color: #FFF; font-weight: 600; box-shadow: none; }
+.qn-box { margin-bottom: 10px; padding: 12px 14px; border-radius: 10px; background: var(--quick-note); box-shadow: 0 0 0 1px #ECE5CF; }
+.qn-box-h { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #8A7A4A; }
+.qn-box-t { margin-top: 4px; font-size: 15px; line-height: 22px; white-space: pre-wrap; word-break: break-word; }
+#qn-slot:empty { display: none; }
+.qn-box-h { align-items: center; min-height: 18px; }
+.qn-box-r { display: flex; align-items: center; gap: 4px; }
+.qn-edit { width: 36px; height: 36px; margin: -10px -12px -10px 0; border: 0; background: none; padding: 0; display: flex; align-items: center; justify-content: center; color: #8A7A4A; }
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn-primary { flex: 1; }
+.btn-secondary { width: 96px; height: 52px; border: 0; border-radius: 12px; background: var(--gray-soft); color: var(--ink); font-size: 17px; font-weight: 600; padding: 0; flex: none; }
+
+/* อารมณ์ · บอร์ด Main / Today-Mood */
+.md-card { position: relative; padding: 18px 16px; }
+.md-edit { position: absolute; top: 20px; right: 16px; width: 24px; height: 24px; border: 0; border-radius: 12px; background: var(--ink); color: #FFF; padding: 0; display: flex; align-items: center; justify-content: center; }
+.md-edit::after { content: ''; position: absolute; inset: -10px; }
+.md-sub { height: 20px; margin-bottom: 14px; font-size: 13px; line-height: 20px; color: var(--muted); }
+.md-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px 4px; }
+.md-btn { min-width: 0; height: 86px; box-sizing: border-box; border: 0; border-radius: 12px; background: transparent; padding: 7px 0 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; }
+.md-btn.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.md-ball { width: 40px; height: 40px; border-radius: 20px; flex: none; }
+.md-name { font-size: 12px; font-weight: 500; line-height: 15px; text-align: center; color: var(--muted); }
+.md-btn.on .md-name { font-weight: 600; color: var(--ink); }
+.md-note { margin-top: 14px; border-radius: 12px; background: var(--gray-soft); padding: 10px 12px 8px; display: block; }
+.md-note-lb { display: block; font-size: 12px; font-weight: 500; color: var(--muted); line-height: 18px; }
+.md-note-in { width: 100%; min-height: 44px; box-sizing: border-box; border: 0; background: none; padding: 0; margin: 0; font-size: 16px; line-height: 22px; color: var(--ink); resize: none; outline: none; display: block; }
+.md-count { display: block; text-align: right; font-size: 12px; color: var(--fade); }
+.md-save { margin-top: 12px; width: 100%; height: 48px; border: 0; border-radius: 14px; background: var(--ink); color: #FFF; font-size: 16px; font-weight: 600; padding: 0; }
+.md-btn:disabled { cursor: default; opacity: 1; -webkit-text-fill-color: currentColor; }
+
+/* ปฏิทิน · Cal-Week */
+.seg { height: 36px; box-sizing: border-box; padding: 4px; border-radius: 12px; background: #E6E6EA; display: flex; gap: 2px; margin-top: 12px; }
+.seg-btn { flex: 1; height: 28px; border: 0; border-radius: 9px; background: transparent; font-size: 14px; font-weight: 500; color: var(--muted); padding: 0; margin: 0; }
+.seg-btn.on { background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.12); font-weight: 600; color: var(--ink); }
+.cal-nav { margin: 8px -8px 0; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+.cal-arrow { width: 44px; height: 44px; border: 0; background: none; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.cal-range { font-family: var(--font-head); font-size: 20px; font-weight: 500; }
+.cal-day { position: relative; }
+.cal-day.is-today { color: var(--ink); }
+.cal-day.is-today .wk-num { font-weight: 600; }
+.cal-imp { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 4px; box-shadow: 0 0 0 1.5px #FFF; }
+.cal-dayhead { margin: 0; padding: 0 4px; font-family: var(--font-head); font-size: 18px; font-weight: 500; line-height: 28px; }
+
+/* ปฏิทินเดือน · Cal-Month */
+.mo { margin-top: 4px; overflow: hidden; }
+.mo-head { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.mo-dn { text-align: center; font-size: 12px; line-height: 32px; color: var(--fade); border-bottom: 1px solid #EDEDF0; }
+.mo-week { position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.mo-week:last-child .mo-cell { border-bottom: 0; }
+.mo-cell { position: relative; height: 78px; box-sizing: border-box; border: 0; border-bottom: 1px solid #EDEDF0; background: none; padding: 3px 3px 0; margin: 0; display: flex; flex-direction: column; gap: 3px; min-width: 0; color: var(--ink); }
+.mo-cell.br { border-right: 1px solid #EDEDF0; }
+.mo-outnum { text-align: center; padding-top: 6px; font-size: 13px; color: #D4D4D8; }
+.mo-num { display: flex; width: 26px; height: 26px; border-radius: 13px; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 13px; font-weight: 500; margin: 0 auto; flex: none; }
+.mo-num.sel { color: #FFF; background: var(--ink); }
+.mo-num.today { box-shadow: inset 0 0 0 1.5px var(--ink); font-weight: 600; }
+.mo-imp { top: 5px; right: 5px; }
+.mo-chips { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mo-chip { display: block; height: 14px; line-height: 14px; border-radius: 4px; font-size: 10px; font-weight: 500; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.mo-chip.imp { border-radius: 2px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+.mo-chip.note { background: #EFEFF2; color: #55555B; font-weight: 400; }
+.mo-chip.spacer { visibility: hidden; }
+.mo-more { font-size: 10px; line-height: 12px; color: var(--muted); padding-left: 3px; text-align: left; }
+.mo-bar { position: absolute; height: 14px; border-radius: 4px; font-size: 10px; font-weight: 500; line-height: 14px; padding: 0 5px; box-sizing: border-box; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.mo-panelhead { margin-top: 0; height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.mo-add { width: 32px; height: 32px; border: 0; border-radius: 16px; background: var(--ink); color: #FFF; display: flex; align-items: center; justify-content: center; padding: 0; position: relative; }
+.mo-add::after { content: ''; position: absolute; inset: -6px; }
+.mo-panel { margin-top: 8px; padding: 0 4px; }
+.mo-panel .ev-sec { padding: 0; }
+.mo-panel .ev-list, .mo-panel .ev-empty { margin-top: 0; }
+.mo-imps { padding: 14px 0 2px; display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
