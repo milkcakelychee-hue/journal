@@ -12,8 +12,8 @@ export function photoURL(date, onReady) {
   return null;
 }
 
-// ย่อด้านยาวสุดไม่เกิน 1600px · JPEG
-export async function shrink(file, max = 1600) {
+// ย่อด้านยาวสุดไม่เกิน 1200px · JPEG 80% (ราว 150–250 KB · บลูขอ 22 พ.ย. 2569 เพื่อให้ Supabase ฟรีเก็บได้นานขึ้น)
+export async function shrink(file, max = 1200) {
   const bmp = await createImageBitmap(file).catch(() => null);
   let w, h, src = bmp;
   if (!bmp) { src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(file); }); }
@@ -21,7 +21,7 @@ export async function shrink(file, max = 1600) {
   const k = Math.min(1, max / Math.max(w, h));
   const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
   c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
-  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.8));
 }
 
 export async function savePhoto(date, blob) {
