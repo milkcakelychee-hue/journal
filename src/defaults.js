@@ -21,6 +21,12 @@ const CATEGORIES = [
   ['เดินทาง', '#DCF0EE', '#2F8A83', '#5FB5AD'], ['อื่น ๆ', '#EFEFF2', '#55555B', '#A3A3A9'],
 ];
 
+// หมวดยาเริ่มต้น · บอร์ด Side-DrugNew
+export const DRUG_CATS = ['ปวดหัว / ลดไข้', 'ปวดท้อง / ท้องอืด', 'แก้หวัด / แก้ไอ', 'แก้แพ้', 'อื่น ๆ'];
+
+// หมวดอาการเริ่มต้น · บอร์ด Side-SymLog
+export const SYM_CATS = ['ปวด', 'ไข้', 'ระบบหายใจ', 'อื่น ๆ'];
+
 export function createDefaultData() {
   return {
     schema: SCHEMA_VERSION,
@@ -47,10 +53,13 @@ export function createDefaultData() {
     periodLog: [],             // { id, date, flow:'h'|'m'|'l', cramps, ended }
     vitamins: [],              // { id, name, dose, timeSlot, freq }
     vitaminLog: {},            // { vitaminId: { 'YYYY-MM-DD': true } }
-    drugCategories: [],
+    drugCategories: DRUG_CATS.map(name => ({ id: id(), name })), // { id, name }
     drugs: [],                 // { id, name, categoryId }
+    drugArchive: [],           // ยาที่ลบจากรายการแล้ว (ให้บันทึกเก่ายังแสดงชื่อ)
     drugLog: [],               // { id, date, drugId, qty, time }
-    symptoms: [],
+    symptomCategories: SYM_CATS.map(name => ({ id: id(), name })), // { id, name }
+    symptoms: [],              // { id, name, categoryId }
+    symptomArchive: [],
     symptomLog: [],            // { id, date, symptomId, note, time }
     photos: {},                // { 'YYYY-MM-DD': { note, updatedAt } } · ตัวภาพอยู่ใน store "photos" แยก
     updatedAt: 0,

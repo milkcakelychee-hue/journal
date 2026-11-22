@@ -1,3 +1,4 @@
+import { resetSidePhoto } from './side-photo.js';
 import { resetSideHealth } from './side-health.js';
 import { resetSideHabit } from './side-habit.js';
 import { openEventSheet } from './event-sheet.js';
@@ -45,7 +46,7 @@ function importantSection(d) {
   if (!list.length) return '';
   return `<section>
     <div class="sec-head"><h2 class="h-sec">วันสำคัญที่ใกล้ถึง</h2>
-      <a href="#important" class="sec-more" aria-label="ดูวันสำคัญทั้งหมด">${CHEVRON}</a></div>
+      <a href="#sides/important/today" class="sec-more" aria-label="ดูวันสำคัญทั้งหมด">${CHEVRON}</a></div>
     <div class="imp-row">${list.map((x, i) => impNoteHtml(x, x.inDays, i)).join('')}</div>
   </section>`;
 }
@@ -79,6 +80,7 @@ export function mountToday(root, rerender) {
     if (go === 'quicknote') openQuickNote(redrawQn);
     if (go === 'health') { resetSideHealth(); location.hash = 'sides/health'; return; }
     if (go === 'habit') { resetSideHabit(); location.hash = 'sides/habit'; return; }
+    if (go === 'photo') { resetSidePhoto(); location.hash = 'sides/photo'; return; }
     const ea = e.target.closest('[data-event-add],[data-event-open]');
     if (ea) { openEventSheet(ea.dataset.eventOpen ? { id: ea.dataset.eventOpen } : { date: todayKey() }, rerender); return; }
     const qe = e.target.closest('[data-qn-edit]')?.dataset.qnEdit;

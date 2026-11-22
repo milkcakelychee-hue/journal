@@ -1,9 +1,15 @@
 // แยกด้าน · สุขภาพ · มุมมองเดือน (Side-Health) ส่วนประจำเดือน
-// + บันทึกประจำเดือน (ปุ่มบันทึก / แตะวัน) · ตั้งค่า / วิตามิน / ยา / อาการป่วย / มุมมองปี ทำในขั้นถัดไป
+// + บันทึกประจำเดือน · ตั้งรอบเดือน · วิตามิน · ยา · อาการป่วย · มุมมองปี
 import { getData } from '../store.js';
 import { DAYS_SHORT, MONTHS, MONTHS_SHORT, toKey, fromKey, todayKey, addDays } from '../lib/date-th.js';
 import { predicted } from '../lib/period.js';
 import { openPeriodSheet } from './period-sheet.js';
+import { openPeriodSetSheet } from './period-set-sheet.js';
+import { vitSection } from './side-vit.js';
+import { openVitSheet } from './vit-sheet.js';
+import { openDrugSheet, drugSection } from './drug-sheet.js';
+import { openSymSheet, symSection } from './sym-sheet.js';
+import { update } from '../store.js';
 
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>'), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>');
@@ -60,6 +66,36 @@ function periodCard(d) {
     </div>`;
 }
 
+// มุมมองปี · บอร์ด Side-HealthYear (12 เดือนย่อ 2 คอลัมน์)
+function miniCell(d, k, i, pred, logs) {
+  const tk = todayKey(), p = logs.p.get(k), sym = logs.s.has(k), drug = logs.g.has(k);
+  const st0 = [];
+  let color = k > tk ? '#C2C2C7' : '#46464B';
+  if (p) { st0.push(`background-color:${FLOW[p.flow] || FLOW.m}`); color = '#fff'; if (sym) st0.push('background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.55) 0px,rgba(255,255,255,0.55) 1px,transparent 1px,transparent 4px)'); }
+  else if (sym) st0.push(`background-image:${HATCH_P}`);
+  else if (pred.has(k)) st0.push('border:1.5px dashed #D98A9C;box-sizing:border-box');
+  if (k === tk) { st0.push('box-shadow:inset 0 0 0 1.5px var(--ink)'); if (!p) color = 'var(--ink)'; }
+  else if (drug) st0.push('box-shadow:inset 0 0 0 1.5px #B5B5BB');
+  return `<span class="hy2-d" style="${st0.join(';')};color:${color}">${i}${p?.cramps ? '<i></i>' : ''}</span>`;
+}
+function yearView(d) {
+  const y = st.y, ws = d.settings.weekStart;
+  const { set } = predicted(d, toKey(new Date(y, 0, 1)), toKey(new Date(y, 11, 31)));
+  const logs = { p: new Map((d.periodLog || []).map(x => [x.date, x])), s: new Set((d.symptomLog || []).map(x => x.date)), g: new Set((d.drugLog || []).map(x => x.date)) };
+  const heads = Array.from({ length: 7 }, (_, i) => `<span class="hy2-h">${DAYS_SHORT[(ws + i) % 7]}</span>`).join('');
+  const months = MONTHS.map((name, m) => {
+    const n = new Date(y, m + 1, 0).getDate(), off = (new Date(y, m, 1).getDay() - ws + 7) % 7;
+    let c = heads + '<span></span>'.repeat(off);
+    for (let i = 1; i <= n; i++) c += miniCell(d, toKey(new Date(y, m, i)), i, set, logs);
+    return `<div class="hy2-m"><div class="hy2-t">${name}</div><div class="hy2-g">${c}</div></div>`;
+  }).join('');
+  return `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="ปีก่อน" data-hl-year="-1">${L}</button>
+      <div class="sm-title">${y + 543}</div>
+      <button type="button" class="cal-arrow" aria-label="ปีถัดไป" data-hl-year="1">${R}</button></div>
+    <div class="hl-leg hy2-leg"><span><i style="background:${FLOW.h}"></i>มาก</span><span><i style="background:${FLOW.m}"></i>ปานกลาง</span><span><i style="background:${FLOW.l}"></i>น้อย</span><span><i class="dot"></i>ปวดท้อง</span><span><i class="sym" style="background:${HATCH_P}"></i>อาการป่วย</span><span><i class="drug"></i>กินยา</span><span><i class="pred"></i>คาดว่าจะมา</span></div>
+    <div class="hy2-grid">${months}</div>`;
+}
+
 export function renderSideHealth() {
   const d = getData();
   const seg = id => `<button type="button" class="seg-btn${st.view === id ? ' on' : ''}" aria-pressed="${st.view === id}" data-hl-view="${id}">${id === 'month' ? 'เดือน' : 'ปี'}</button>`;
@@ -70,18 +106,31 @@ export function renderSideHealth() {
     ${st.view === 'month' ? `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="เดือนก่อน" data-hl-month="-1">${L}</button>
       <div class="sm-title">${MONTHS[st.m]} <span style="color:var(--muted)">${st.y + 543}</span></div>
       <button type="button" class="cal-arrow" aria-label="เดือนถัดไป" data-hl-month="1">${R}</button></div>
-    ${periodCard(d)}` : ''}
+    ${periodCard(d)}${vitSection(d, st.y, st.m)}${drugSection(d, todayKey())}${symSection(d, todayKey())}` : yearView(d)}
   </div>`;
 }
 
 export function mountSideHealth(root, rerender) {
   root.addEventListener('click', e => {
     if (e.target.closest('[data-hl-log]')) { openPeriodSheet(rerender); return; }
+    if (e.target.closest('[data-sy-add]')) { openSymSheet(rerender); return; }
+    const sl = e.target.closest('[data-sy-log]');
+    if (sl) { openSymSheet(rerender, sl.dataset.syLog); return; }
+    if (e.target.closest('[data-dg-add]')) { openDrugSheet(rerender); return; }
+    const dl = e.target.closest('[data-dg-log]');
+    if (dl) { openDrugSheet(rerender, dl.dataset.dgLog); return; }
+    if (e.target.closest('[data-vt-add]')) { openVitSheet(rerender); return; }
+    const vt = e.target.closest('[data-vt-toggle]');
+    if (vt) { const id = vt.dataset.vtToggle, k = todayKey(); update(d => { const l = d.vitaminLog[id] ||= {}; if (l[k]) delete l[k]; else l[k] = true; }); rerender(); return; }
+    const ve = e.target.closest('[data-vt-edit]');
+    if (ve) { openVitSheet(rerender, ve.dataset.vtEdit); return; }
+    if (e.target.closest('[data-hl-set]')) { openPeriodSetSheet(rerender); return; }
     const day = e.target.closest('[data-hl-day]');
     if (day) { openPeriodSheet(rerender, day.dataset.hlDay); return; }
-    const b = e.target.closest('[data-hl-view],[data-hl-month]');
+    const b = e.target.closest('[data-hl-view],[data-hl-month],[data-hl-year]');
     if (!b) return;
     if (b.dataset.hlView) st.view = b.dataset.hlView;
+    else if (b.dataset.hlYear) st.y += Number(b.dataset.hlYear);
     else { const n = st.m + Number(b.dataset.hlMonth); st.y += Math.floor(n / 12); st.m = (n + 12) % 12; }
     rerender();
   });

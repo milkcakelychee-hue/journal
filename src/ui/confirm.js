@@ -3,12 +3,13 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const TRASH = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7 H19"/><path d="M9 7 V5 H15 V7"/><path d="M7 7 L8 20 H16 L17 7"/></svg>';
 
 // confirmDelete({ title: 'ลบ "x"?', body: 'บรรทัด1<br>บรรทัด2' }) → Promise<boolean>
-export function confirmDelete({ title, body = '', ok = 'ลบ', cancel = 'ยกเลิก' }) {
+export const WARN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 L21 19 H3 Z"/><path d="M12 10 V14"/><path d="M12 17 V17.5"/></svg>';
+export function confirmDelete({ title, body = '', ok = 'ลบ', cancel = 'ยกเลิก', icon = TRASH }) {
   return new Promise(resolve => {
     const el = document.createElement('div');
     el.className = 'cf-back';
     el.innerHTML = `<div class="cf" role="alertdialog" aria-labelledby="cf-t">
-      <div class="cf-ic">${TRASH}</div>
+      <div class="cf-ic">${icon}</div>
       <h2 id="cf-t" class="cf-t">${esc(title)}</h2>
       ${body ? `<p class="cf-b">${body}</p>` : '<div style="height:18px"></div>'}
       <div class="cf-btns"><button type="button" class="cf-no">${cancel}</button><button type="button" class="cf-yes">${ok}</button></div>

@@ -1,4 +1,4 @@
-// สีและไอคอนหมวด · บอร์ด Pick-Cat / Cat-New (8 สี × 8 ไอคอน)
+// สีและไอคอนหมวด · บอร์ด Pick-Cat / Cat-New (16 สี × 8 ไอคอน)
 export const CAT_COLORS = [
   { tile: 'linear-gradient(180deg,#C8DCF0,#BFD6EE)', dot: '#C8DCF0', bg: '#DFEAF6', fg: '#3F6A9F', accent: '#6C9BD1' }, // งาน
   { tile: 'linear-gradient(180deg,#F6CFCB,#F4C7C3)', dot: '#F6CFCB', bg: '#FAE3E1', fg: '#B05A54', accent: '#E58F88' }, // ส่วนตัว
@@ -8,7 +8,18 @@ export const CAT_COLORS = [
   { tile: 'linear-gradient(180deg,#CEE7CB,#C6E3C3)', dot: '#CEE7CB', bg: '#E2F1E1', fg: '#4B8A47', accent: '#7FB87B' }, // สุขภาพ
   { tile: 'linear-gradient(180deg,#C4E5E2,#B9E1DE)', dot: '#C4E5E2', bg: '#DCF0EE', fg: '#2F8A83', accent: '#5FB5AD' }, // เดินทาง
   { tile: 'linear-gradient(180deg,#E8DFD3,#E3D9CB)', dot: '#E8DFD3', bg: '#EFEFF2', fg: '#55555B', accent: '#A3A3A9' }, // อื่น ๆ
+  // แถวที่ 2 (บลูขอเพิ่ม 22 พ.ย. 2569)
+  { tile: 'linear-gradient(180deg,#F3C9DD,#F2C3DA)', dot: '#F3C9DD', bg: '#F7DDEA', fg: '#9B5C7A', accent: '#E487B4' }, // ชมพู
+  { tile: 'linear-gradient(180deg,#EEBBB7,#ECB3AF)', dot: '#EEBBB7', bg: '#F4D4D2', fg: '#944641', accent: '#D9675F' }, // แดง
+  { tile: 'linear-gradient(180deg,#B6DAF2,#AED6F0)', dot: '#B6DAF2', bg: '#D2E8F7', fg: '#3F769A', accent: '#5DADE2' }, // ฟ้า
+  { tile: 'linear-gradient(180deg,#BEC4ED,#B7BDEC)', dot: '#BEC4ED', bg: '#D7DAF4', fg: '#4B5493', accent: '#6F7BD8' }, // คราม
+  { tile: 'linear-gradient(180deg,#D7E4B5,#D2E1AC)', dot: '#D7E4B5', bg: '#E6EED1', fg: '#71853D', accent: '#A6C35A' }, // เขียวมะนาว
+  { tile: 'linear-gradient(180deg,#B0D2BE,#A7CCB6)', dot: '#B0D2BE', bg: '#CEE3D6', fg: '#36694B', accent: '#4F9A6E' }, // เขียวเข้ม
+  { tile: 'linear-gradient(180deg,#C4CAD2,#BEC4CD)', dot: '#C4CAD2', bg: '#DBDEE3', fg: '#555E69', accent: '#7D8A9B' }, // เทาฟ้า
+  { tile: 'linear-gradient(180deg,#D8C6B7,#D4C0AE)', dot: '#D8C6B7', bg: '#E7DBD2', fg: '#735740', accent: '#A9805E' }, // น้ำตาล
 ];
+// ลำดับที่แสดงในหน้าเลือกสี (เรียงตามโทน) · ค่าที่เก็บยังเป็น index เดิม
+export const CAT_ORDER = [9, 1, 8, 2, 11, 0, 10, 14, 6, 13, 5, 12, 4, 3, 15, 7];
 export const CAT_ICONS = [
   s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M9 7.5 V6 a2 2 0 0 1 2 -2 h2 a2 2 0 0 1 2 2 V7.5"/><path d="M3 13 H21"/></svg>`, // งาน
   s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20 C12 20 4 15 4 9.5 A4 4 0 0 1 12 8 A4 4 0 0 1 20 9.5 C20 15 12 20 12 20 Z"/></svg>`, // ส่วนตัว

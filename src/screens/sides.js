@@ -2,7 +2,9 @@
 import { renderSideMood, mountSideMood, resetSideMood } from './side-mood.js';
 import { renderSideHabit, mountSideHabit, resetSideHabit } from './side-habit.js';
 import { renderSideHealth, mountSideHealth, resetSideHealth } from './side-health.js';
-const SUBS = { mood: [renderSideMood, mountSideMood, resetSideMood], habit: [renderSideHabit, mountSideHabit, resetSideHabit], health: [renderSideHealth, mountSideHealth, resetSideHealth] };
+import { renderSideImp, mountSideImp, resetSideImp } from './side-imp.js';
+import { renderSidePhoto, mountSidePhoto, resetSidePhoto } from './side-photo.js';
+const SUBS = { mood: [renderSideMood, mountSideMood, resetSideMood], habit: [renderSideHabit, mountSideHabit, resetSideHabit], health: [renderSideHealth, mountSideHealth, resetSideHealth], important: [renderSideImp, mountSideImp, resetSideImp], photo: [renderSidePhoto, mountSidePhoto, resetSidePhoto] };
 const sub = () => SUBS[location.hash.split('/')[1]];
 const ARROW = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 L17 7"/><path d="M8.5 7 H17 V15.5"/></svg>';
 const G = '#C9C9CE';

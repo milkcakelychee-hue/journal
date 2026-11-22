@@ -39,6 +39,10 @@ export async function loadData() {
   // เติมสี/ไอคอน (ดัชนีใน CAT_COLORS / CAT_ICONS) ให้หมวดที่สร้างก่อนมีช่องนี้
   data.categories.forEach(c => { const i = base.categories.findIndex(b => b.name === c.name); if (c.color == null) c.color = i < 0 ? 7 : i; if (c.icon == null) c.icon = i < 0 ? 7 : i; });
   for (const c of data.categories) if (!c.accent) c.accent = base.categories.find(b => b.name === c.name)?.accent || c.fg;
+  if (!data.drugCategories.length && !data.drugs.length) data.drugCategories = base.drugCategories; // ข้อมูลที่สร้างก่อนมีหมวดยาเริ่มต้น
+  if (!data.symptomCategories.length && !data.symptoms.length) data.symptomCategories = base.symptomCategories;
+  // ข้อมูลที่ใช้มาก่อนมีหน้าเปิดครั้งแรก: ถือว่าผ่านแล้ว ไม่ต้องเห็นหน้าต้อนรับ
+  if (saved && !data.settings.onboarded && (data.settings.name || data.events.length || data.todos?.length || Object.keys(data.moodLog).length || Object.keys(data.photos || {}).length)) data.settings.onboarded = true;
   if (!saved) await persist();
   return data;
 }

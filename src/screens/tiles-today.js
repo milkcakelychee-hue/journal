@@ -7,7 +7,7 @@ const ICONS = {
   note: `<svg width="52" height="52" viewBox="0 0 48 48" aria-hidden="true"><rect x="8.5" y="9" width="17" height="30" rx="2.5" fill="${G}" transform="rotate(-12 17 24)"/><rect x="24.5" y="9" width="17" height="30" rx="2.5" fill="${G}" transform="rotate(12 33 24)"/></svg>`,
   photo: `<svg width="50" height="50" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="34" rx="2" fill="${G}"/><circle cx="30" cy="17" r="3.5" fill="#FFFFFF"/><path d="M13 36 L21 25 L27 32 L30 28 L35 36 Z" fill="#FFFFFF"/></svg>`,
 };
-// go = ปลายทาง (ผูกจริงเมื่อหน้านั้นสร้างเสร็จ)
+// go = ปลายทางเมื่อแตะป้าย
 const TILES = [
   { id: 'habit', label: 'Habit วันนี้', go: 'habit' },
   { id: 'health', label: 'สุขภาพวันนี้', go: 'health' },

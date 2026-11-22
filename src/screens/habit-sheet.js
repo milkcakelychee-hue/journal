@@ -12,7 +12,7 @@ const WEEK = [1, 2, 3, 4, 5, 6, 0]; // จ → อา ตามบอร์ด
 export function openHabitSheet(onSaved, id) {
   const old = id ? getData().habits.find(h => h.id === id) : null;
   const f = old ? { type: old.type || 'build', name: old.name, color: old.color, kind: old.freq?.kind || 'daily', days: [...(old.freq?.days || [])] }
-    : { type: 'build', name: '', color: HABIT_COLORS[0], kind: 'daily', days: [] };
+    : { type: 'build', name: '', color: '#6C9BD1', kind: 'daily', days: [] };
   const seg = (key, val, label) => `<button type="button" class="seg-btn${f[key] === val ? ' on' : ''}" aria-pressed="${f[key] === val}" data-hn-${key}="${val}">${label}</button>`;
   const body = () => `<div class="hn">
       <div><div class="ea-lab">ประเภท</div><div class="seg hn-seg">${seg('type', 'build', 'นิสัยที่อยากสร้าง')}${seg('type', 'quit', 'นิสัยที่อยากเลิก')}</div></div>

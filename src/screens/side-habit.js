@@ -12,7 +12,7 @@ const BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke
 const PLUS = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5 V19"/><path d="M5 12 H19"/></svg>';
 const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 L10 17 L19 7.5"/></svg>';
 const FLAME = c => `<svg width="14" height="14" viewBox="0 0 24 24" fill="${c}" aria-hidden="true"><path d="M12 2.5c.6 3.2-1.4 4.9-3 6.6C7.4 10.8 6 12.6 6 15a6 6 0 0 0 12 0c0-2.3-1-4.1-2.3-5.4.1 1.6-.5 2.8-1.6 3.3.3-3.6-.9-7.5-2.1-10.4Z"/></svg>`;
-export const HABIT_COLORS = ['#6C9BD1', '#7DBE78', '#9C86D6', '#EBA463', '#E58F88', '#5FBDB6', '#D9BC3C', '#B5A48E'];
+export const HABIT_COLORS = ['#D9675F', '#E58F88', '#E487B4', '#9C86D6', '#6F7BD8', '#6C9BD1', '#5DADE2', '#7D8A9B', '#5FBDB6', '#4F9A6E', '#7DBE78', '#A6C35A', '#D9BC3C', '#EBA463', '#A9805E', '#B5A48E']; // เรียงตามโทนสี (16 สี) // แถวที่ 2 (บลูขอเพิ่ม 22 พ.ย. 2569)
 export const light = c => tint(c, 0.72); // สีอ่อน = ไม่สำเร็จ
 
 const st = { view: 'month', y: 0, m: 0 };

@@ -1,12 +1,15 @@
 // เพิ่ม/แก้กิจกรรม · บอร์ด Add-New / Add-Filled / Add-Edit
 // หมวด → Pick-Cat → Cat-New (หน้าย่อยในแผ่นเดียวกัน) · คน → Pick-Person → Pick-PersonNew · ที่ → Pick-Place → Pick-PlaceNew
+// คน/ที่ มีหน้า "แก้ไข" (เปลี่ยนชื่อ/ลบ) แบบหมวดยา (บลูขอ 22 พ.ย. 2569 แทนแถวในตั้งค่า)
 import { getData, update } from '../store.js';
 import { newId } from '../defaults.js';
 import { DAYS_SHORT, MONTHS, MONTHS_SHORT, fromKey, toKey, todayKey } from '../lib/date-th.js';
 import { openSheet } from '../ui/sheet.js';
 import { confirmDelete } from '../ui/confirm.js';
 import { timeWheelHtml, mountTimeWheel } from '../ui/timewheel.js';
-import { catColor, catIcon, CAT_COLORS, CAT_ICONS } from '../lib/categories.js';
+import { catColor, catIcon, CAT_COLORS, CAT_ICONS, CAT_ORDER } from '../lib/categories.js';
+const PEN16 = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 H8 L19 9 a2.1 2.1 0 0 0 0 -3 l-1 -1 a2.1 2.1 0 0 0 -3 0 L4 16 Z"/></svg>';
+const BIN16 = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7 H19"/><path d="M9 7 V5 H15 V7"/><path d="M7 7 L8 20 H16 L17 7"/></svg>';
 const PLUS16 = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5 V19"/><path d="M5 12 H19"/></svg>';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -49,11 +52,11 @@ export function openEventSheet({ date, id }, onSaved) {
   };
 
   // หมวดใหม่ · Cat-New (ค่าเริ่มต้นตามบอร์ด: สีแรก · ไอคอนสุดท้าย)
-  const COLOR_NAMES = ['งาน', 'ส่วนตัว', 'เรียน', 'สังคม', 'ครอบครัว', 'สุขภาพ', 'เดินทาง', 'อื่น ๆ'];
+  const COLOR_NAMES = ['งาน', 'ส่วนตัว', 'เรียน', 'สังคม', 'ครอบครัว', 'สุขภาพ', 'เดินทาง', 'อื่น ๆ', 'ชมพู', 'แดง', 'ฟ้า', 'คราม', 'เขียวมะนาว', 'เขียวเข้ม', 'เทาฟ้า', 'น้ำตาล'];
   const catNewPage = () => `<div class="ea">
       <div class="cn-prev"><span class="cn-chip" style="background:${CAT_COLORS[cn.color].tile}">${CAT_ICONS[cn.icon](16)}<span data-cn-prev>${esc(cn.name.trim() || 'ชื่อหมวด')}</span></span></div>
       <div><div class="ea-lab">ชื่อหมวด</div><input type="text" class="ea-input" aria-label="ชื่อหมวด" placeholder="ชื่อหมวด" value="${esc(cn.name)}" data-cn-name></div>
-      <div><div class="ea-lab">สี</div><div class="cn-colors">${CAT_COLORS.map((c, i) => `<button type="button" class="cn-color" aria-pressed="${i === cn.color}" aria-label="สี ${COLOR_NAMES[i]}" data-cn-color="${i}"><span class="${i === cn.color ? 'on' : ''}" style="background:${c.tile}"></span></button>`).join('')}</div></div>
+      <div><div class="ea-lab">สี</div><div class="cn-colors">${CAT_ORDER.map(i => [CAT_COLORS[i], i]).map(([c, i]) => `<button type="button" class="cn-color" aria-pressed="${i === cn.color}" aria-label="สี ${COLOR_NAMES[i]}" data-cn-color="${i}"><span class="${i === cn.color ? 'on' : ''}" style="background:${c.tile}"></span></button>`).join('')}</div></div>
       <div><div class="ea-lab">ไอคอน</div><div class="cn-icons">${CAT_ICONS.map((f, i) => `<button type="button" class="cn-icon${i === cn.icon ? ' on' : ''}" aria-pressed="${i === cn.icon}" aria-label="ไอคอน ${i + 1}" data-cn-icon="${i}">${f(26)}</button>`).join('')}</div></div>
     </div>
     <div style="margin-top:16px"><button type="button" class="btn-primary" data-cn-save>สร้างหมวด</button></div>`;
@@ -64,7 +67,7 @@ export function openEventSheet({ date, id }, onSaved) {
     const sel = id => f.peopleIds.includes(id);
     return `${ppl.length ? `<div class="pc-grid">${ppl.map(p => `<button type="button" class="pp-tile${sel(p.id) ? ' on' : ''}" aria-pressed="${sel(p.id)}" aria-label="${esc(p.name)}" data-ea-person="${p.id}"><span>${T_PER.replace(/30/g, '28')}</span><span class="pc-name">${esc(p.name)}</span></button>`).join('')}</div>` : ''}
       <div class="pc-row"${ppl.length ? '' : ' style="margin-top:0"'}><button type="button" class="pc-none${f.peopleIds.length ? '' : ' on'}" aria-pressed="${!f.peopleIds.length}" data-ea-person="">ไม่ระบุ</button>
-        <button type="button" class="pc-new" data-ea-personnew>${PLUS16}คนใหม่</button></div>`;
+        <button type="button" class="pc-new" data-ea-personnew>${PLUS16}คนใหม่</button>${ppl.length ? `<button type="button" class="pc-new" data-ea-edit="people">${PEN16}แก้ไข</button>` : ''}</div>`;
   };
   const personNewPage = () => `<input type="text" class="ea-input" aria-label="คนใหม่" placeholder="พิมพ์ชื่อคน" value="${esc(pn)}" data-pn-name>
     <div style="margin-top:16px"><button type="button" class="btn-primary" data-pn-save>เพิ่ม</button></div>`;
@@ -74,10 +77,15 @@ export function openEventSheet({ date, id }, onSaved) {
     const pl = getData().places;
     return `${pl.length ? `<div class="pc-grid">${pl.map(p => `<button type="button" class="pp-tile${p.id === f.placeId ? ' on' : ''}" aria-pressed="${p.id === f.placeId}" aria-label="${esc(p.name)}" data-ea-place="${p.id}"><span>${T_PLC.replace(/30/g, '28')}</span><span class="pc-name">${esc(p.name)}</span></button>`).join('')}</div>` : ''}
       <div class="pc-row"${pl.length ? '' : ' style="margin-top:0"'}><button type="button" class="pc-none${f.placeId ? '' : ' on'}" aria-pressed="${!f.placeId}" data-ea-place="">ไม่ระบุ</button>
-        <button type="button" class="pc-new" data-ea-placenew>${PLUS16}ที่ใหม่</button></div>`;
+        <button type="button" class="pc-new" data-ea-placenew>${PLUS16}ที่ใหม่</button>${pl.length ? `<button type="button" class="pc-new" data-ea-edit="places">${PEN16}แก้ไข</button>` : ''}</div>`;
   };
   const placeNewPage = () => `<input type="text" class="ea-input" aria-label="ที่ใหม่" placeholder="พิมพ์ชื่อสถานที่" value="${esc(pn)}" data-pn-name>
     <div style="margin-top:16px"><button type="button" class="btn-primary" data-pl-save>เพิ่ม</button></div>`;
+
+  // แก้ไขรายชื่อคน / ที่ (หน้าย่อยในแผ่นเดียวกัน แบบหมวดยา): พิมพ์ทับเพื่อเปลี่ยนชื่อ · ถังขยะ = ลบ (มีป๊อปอัป)
+  let draft = {}; // ชื่อที่พิมพ์ค้างไว้ (ยังไม่กดบันทึก)
+  const editPage = key => `<div class="dg-list">${getData()[key].map(p => `<div class="dg-row"><input type="text" class="dg-cin" aria-label="ชื่อ" value="${esc(draft[p.id] ?? p.name)}" data-ed-name="${key}:${p.id}"><button type="button" class="dg-ic" aria-label="ลบ ${esc(p.name)}" data-ed-del="${key}:${p.id}">${BIN16}</button></div>`).join('')}</div>
+    <div style="margin-top:16px"><button type="button" class="btn-primary" data-ed-save="${key}">บันทึก</button></div>`;
 
   // เลือกวัน · Cal-AddRange (ปฏิทินในแผ่นเดียวกัน)
   const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>', 22), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>', 22);
@@ -106,6 +114,8 @@ export function openEventSheet({ date, id }, onSaved) {
 
   const body = () => {
     if (view === 'date') return datePage();
+    if (view === 'peopleedit') return editPage('people');
+    if (view === 'placesedit') return editPage('places');
     if (view === 'place') return placePage();
     if (view === 'placenew') return placeNewPage();
     if (view === 'person') return personPage();
@@ -138,6 +148,8 @@ export function openEventSheet({ date, id }, onSaved) {
         else if (v === 'personnew') head('คนใหม่', () => go('person'));
         else if (v === 'place') head('ที่', () => go('form'));
         else if (v === 'placenew') head('ที่ใหม่', () => go('place'));
+        else if (v === 'peopleedit') head('แก้ไขคน', () => go('person'));
+        else if (v === 'placesedit') head('แก้ไขที่', () => go('place'));
         else head('เลือกวัน', () => go('form'));
         rerender();
         if (v === 'personnew' || v === 'placenew') el.querySelector('[data-pn-name]')?.focus();
@@ -155,7 +167,26 @@ export function openEventSheet({ date, id }, onSaved) {
         if (e.target.matches('[data-pn-name]')) pn = e.target.value;
         if (e.target.matches('[data-cn-name]')) { cn.name = e.target.value; el.querySelector('[data-cn-prev]').textContent = cn.name.trim() || 'ชื่อหมวด'; }
       });
+      el.addEventListener('input', e => { const t = e.target.closest('[data-ed-name]'); if (t) draft[t.dataset.edName.split(':')[1]] = t.value; });
       el.addEventListener('click', async e => {
+        const eb = e.target.closest('[data-ea-edit],[data-ed-del],[data-ed-save]');
+        if (eb?.dataset.eaEdit) { draft = {}; go(eb.dataset.eaEdit + 'edit'); return; }
+        if (eb?.dataset.edSave) {
+          const key = eb.dataset.edSave;
+          update(dd => { dd[key].forEach(p => { const v = (draft[p.id] ?? '').trim(); if (v) p.name = v; }); });
+          draft = {}; go(key === 'people' ? 'person' : 'place'); return;
+        }
+        if (eb?.dataset.edDel) {
+          const [key, id] = eb.dataset.edDel.split(':'), x = getData()[key].find(p => p.id === id);
+          if (!await confirmDelete({ title: `ลบ "${x.name}"?` })) return;
+          update(dd => {
+            dd[key] = dd[key].filter(p => p.id !== id);
+            dd.events.forEach(ev => { if (key === 'people') ev.peopleIds = (ev.peopleIds || []).filter(i => i !== id); else if (ev.placeId === id) ev.placeId = null; });
+          });
+          if (key === 'people') f.peopleIds = f.peopleIds.filter(i => i !== id); else if (f.placeId === id) f.placeId = null;
+          if (!getData()[key].length) go(key === 'people' ? 'person' : 'place'); else rerender();
+          return;
+        }
         const b = e.target.closest('[data-ea-switch],[data-ea-time],[data-ea-save],[data-ea-del],[data-ea-pick],[data-ea-cat],[data-ea-catnew],[data-cn-color],[data-cn-icon],[data-cn-save],[data-ea-person],[data-ea-personnew],[data-pn-save],[data-ea-place],[data-ea-placenew],[data-pl-save],[data-ea-date],[data-dr-day],[data-dr-month],[data-dr-ok]');
         if (!b) return;
         if (b.dataset.eaSwitch !== undefined) { f.time = f.time ? null : '09:00'; wheel = !!f.time; rerender(); }
