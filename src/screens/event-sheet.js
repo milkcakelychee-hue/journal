@@ -67,10 +67,11 @@ export function openEventSheet({ date, id }, onSaved) {
     const sel = id => f.peopleIds.includes(id);
     return `${ppl.length ? `<div class="pc-grid">${ppl.map(p => `<button type="button" class="pp-tile${sel(p.id) ? ' on' : ''}" aria-pressed="${sel(p.id)}" aria-label="${esc(p.name)}" data-ea-person="${p.id}"><span>${T_PER.replace(/30/g, '28')}</span><span class="pc-name">${esc(p.name)}</span></button>`).join('')}</div>` : ''}
       <div class="pc-row"${ppl.length ? '' : ' style="margin-top:0"'}><button type="button" class="pc-none${f.peopleIds.length ? '' : ' on'}" aria-pressed="${!f.peopleIds.length}" data-ea-person="">ไม่ระบุ</button>
-        <button type="button" class="pc-new" data-ea-personnew>${PLUS16}คนใหม่</button>${ppl.length ? `<button type="button" class="pc-new" data-ea-edit="people">${PEN16}แก้ไข</button>` : ''}</div>`;
+        <button type="button" class="pc-new" data-ea-personnew>${PLUS16}คนใหม่</button>${ppl.length ? `<button type="button" class="pc-new" data-ea-edit="people">${PEN16}แก้ไข</button>` : ''}</div>
+      <div style="margin-top:16px"><button type="button" class="btn-primary" data-ea-pdone>บันทึก</button></div>`;
   };
   const personNewPage = () => `<input type="text" class="ea-input" aria-label="คนใหม่" placeholder="พิมพ์ชื่อคน" value="${esc(pn)}" data-pn-name>
-    <div style="margin-top:16px"><button type="button" class="btn-primary" data-pn-save>เพิ่ม</button></div>`;
+    <div style="margin-top:16px"><button type="button" class="btn-primary" data-pn-save>บันทึก</button></div>`;
 
   // หน้าเลือกที่ · Pick-Place (เลือกได้ที่เดียว) / Pick-PlaceNew
   const placePage = () => {
@@ -80,7 +81,7 @@ export function openEventSheet({ date, id }, onSaved) {
         <button type="button" class="pc-new" data-ea-placenew>${PLUS16}ที่ใหม่</button>${pl.length ? `<button type="button" class="pc-new" data-ea-edit="places">${PEN16}แก้ไข</button>` : ''}</div>`;
   };
   const placeNewPage = () => `<input type="text" class="ea-input" aria-label="ที่ใหม่" placeholder="พิมพ์ชื่อสถานที่" value="${esc(pn)}" data-pn-name>
-    <div style="margin-top:16px"><button type="button" class="btn-primary" data-pl-save>เพิ่ม</button></div>`;
+    <div style="margin-top:16px"><button type="button" class="btn-primary" data-pl-save>บันทึก</button></div>`;
 
   // แก้ไขรายชื่อคน / ที่ (หน้าย่อยในแผ่นเดียวกัน แบบหมวดยา): พิมพ์ทับเพื่อเปลี่ยนชื่อ · ถังขยะ = ลบ (มีป๊อปอัป)
   let draft = {}; // ชื่อที่พิมพ์ค้างไว้ (ยังไม่กดบันทึก)
@@ -187,7 +188,7 @@ export function openEventSheet({ date, id }, onSaved) {
           if (!getData()[key].length) go(key === 'people' ? 'person' : 'place'); else rerender();
           return;
         }
-        const b = e.target.closest('[data-ea-switch],[data-ea-time],[data-ea-save],[data-ea-del],[data-ea-pick],[data-ea-cat],[data-ea-catnew],[data-cn-color],[data-cn-icon],[data-cn-save],[data-ea-person],[data-ea-personnew],[data-pn-save],[data-ea-place],[data-ea-placenew],[data-pl-save],[data-ea-date],[data-dr-day],[data-dr-month],[data-dr-ok]');
+        const b = e.target.closest('[data-ea-switch],[data-ea-time],[data-ea-save],[data-ea-del],[data-ea-pick],[data-ea-cat],[data-ea-catnew],[data-cn-color],[data-cn-icon],[data-cn-save],[data-ea-person],[data-ea-personnew],[data-ea-pdone],[data-pn-save],[data-ea-place],[data-ea-placenew],[data-pl-save],[data-ea-date],[data-dr-day],[data-dr-month],[data-dr-ok]');
         if (!b) return;
         if (b.dataset.eaSwitch !== undefined) { f.time = f.time ? null : '09:00'; wheel = !!f.time; rerender(); }
         else if (b.dataset.eaTime !== undefined) { wheel = !wheel; rerender(); }
@@ -209,6 +210,7 @@ export function openEventSheet({ date, id }, onSaved) {
           if (!id) { f.peopleIds = []; go('form'); }
           else { f.peopleIds = f.peopleIds.includes(id) ? f.peopleIds.filter(x => x !== id) : [...f.peopleIds, id]; rerender(); }
         }
+        else if (b.dataset.eaPdone !== undefined) go('form');
         else if (b.dataset.eaPersonnew !== undefined) { pn = ''; go('personnew'); }
         else if (b.dataset.pnSave !== undefined) {
           const name = pn.trim();
