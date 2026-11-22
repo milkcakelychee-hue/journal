@@ -24,3 +24,5 @@ app.addEventListener('click', e => {
 });
 window.addEventListener('hashchange', render);
 render();
+
+if (import.meta.env.PROD) import('./update.js');

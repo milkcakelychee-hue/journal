@@ -1,11 +1,18 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
+import pkg from './package.json' with { type: 'json' };
+
+let hash = '';
+try { hash = execSync('git rev-parse --short HEAD').toString().trim(); } catch {}
 
 export default defineConfig({
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(pkg.version + (hash ? ' · ' + hash : '')) },
   plugins: [
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // ห้ามใช้ autoUpdate คู่กับ src/update.js
+      injectRegister: false,
       manifest: {
         name: 'Journal',
         short_name: 'Journal',
