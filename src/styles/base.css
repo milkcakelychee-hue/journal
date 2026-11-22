@@ -838,3 +838,4 @@ button.ea-date { border: 0; margin: 0; font-family: inherit; text-align: left; }
 .hd-cnt.err { color: #A32D2D; }
 .mo-acts { display: flex; align-items: center; gap: 8px; }
 .mo-acts .hol-add { height: 32px; border-radius: 16px; padding: 0 12px; }
+.wk-day.hol-bg:not(.cal-day.today) { background-image: repeating-linear-gradient(45deg, rgba(226,75,74,0.18) 0 1px, transparent 1px 7px); }

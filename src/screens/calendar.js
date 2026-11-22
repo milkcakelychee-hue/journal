@@ -46,10 +46,10 @@ function weekStrip(d, days) {
   return `<section><div class="wk-row">${days.map(day => {
     const k = toKey(day);
     const sel = k === st.sel, today = k === tk;
-    const imp = importantOn(d, k)[0];
+    const imp = importantOn(d, k)[0], hol = holidaysOn(d, k)[0];
     const dot = hasEntry(d, k) ? (sel ? 'var(--ink)' : '#B8B8BE') : 'transparent';
-    return `<button type="button" class="wk-day cal-day${sel ? ' today' : ''}${today && !sel ? ' is-today' : ''}" aria-pressed="${sel}"${today ? ' aria-current="date"' : ''}
-      aria-label="${DAYS_SHORT[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}${imp ? ` · วันสำคัญ ${imp.title}` : ''}" data-cal-pick="${k}">
+    return `<button type="button" class="wk-day cal-day${sel ? ' today' : ''}${today && !sel ? ' is-today' : ''}${hol ? ' hol-bg' : ''}" aria-pressed="${sel}"${today ? ' aria-current="date"' : ''}
+      aria-label="${DAYS_SHORT[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}${hol ? ` · วันหยุด ${esc(hol.name)}` : ''}${imp ? ` · วันสำคัญ ${imp.title}` : ''}" data-cal-pick="${k}">
       ${imp ? `<span class="cal-imp" style="background:${impDot(imp)}"></span>` : ''}
       <span class="wk-dn">${DAYS_SHORT[day.getDay()]}</span><span class="wk-num">${day.getDate()}</span><span class="wk-dot" style="background:${dot}"></span></button>`;
   }).join('')}</div></section>`;
@@ -61,7 +61,8 @@ function weekView(d) {
   const sel = fromKey(st.sel);
   return `${weekHeader(days)}</div>
     ${weekStrip(d, days)}
-    <h2 class="cal-dayhead">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2>
+    <div class="mo-panelhead cal-dayhead"><h2 class="h-sec">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2><button type="button" class="hol-add" style="height:32px;border-radius:16px;padding:0 12px" data-hol-add>+ วันหยุด</button></div>
+    ${holidaysOn(d, st.sel).length ? `<div class="hol-row" style="margin:0 4px 12px">${holidaysOn(d, st.sel).map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)}</button>`).join('')}</div>` : ''}
     <div id="todo-slot">${renderTodoCard()}</div>
     ${renderEventsSection({ key: st.sel, title: 'กิจกรรม', empty: 'ยังไม่มีกิจกรรม', after: renderQuickNotesToday(st.sel) })}`;
 }

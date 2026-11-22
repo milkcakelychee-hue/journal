@@ -2,6 +2,7 @@ import { resetSidePhoto } from './side-photo.js';
 import { resetSideHealth } from './side-health.js';
 import { resetSideHabit } from './side-habit.js';
 import { openEventSheet } from './event-sheet.js';
+import { openHolidaySheet, holidaysOn } from './holiday-sheet.js';
 // หน้าวันนี้ · บอร์ด Main
 import { getData } from '../store.js';
 import { renderTodoCard, bindTodo } from './todo.js';
@@ -32,9 +33,11 @@ function weekStrip(d) {
       const past = k < tk;
       const color = moodColor(d, k);
       // แถบนี้แสดงวันที่อย่างเดียว แตะไม่ได้ (ดูย้อนหลังในปฏิทิน)
-      return `<div class="wk-day${today ? ' today' : ''}${past ? ' past' : ''}" aria-label="${DAYS_SHORT[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}"${today ? ' aria-current="date"' : ''}>
+      const hol = holidaysOn(d, k)[0];
+      return `<div class="wk-day${today ? ' today' : ''}${past ? ' past' : ''}${hol ? ' hol-bg' : ''}" aria-label="${DAYS_SHORT[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}${hol ? ` · วันหยุด ${esc(hol.name)}` : ''}"${today ? ' aria-current="date"' : ''}>
         <span class="wk-dn">${DAYS_SHORT[day.getDay()]}</span><span class="wk-num">${day.getDate()}</span><span class="wk-dot"${color ? ` style="background:${color}"` : ''}></span></div>`;
     }).join('')}</div>
+    ${holidaysOn(d, tk).length ? `<div class="hol-row" style="margin:10px 0 0">${holidaysOn(d, tk).map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)}</button>`).join('')}</div>` : ''}
   </section>`;
 }
 
@@ -81,6 +84,8 @@ export function mountToday(root, rerender) {
     if (go === 'health') { resetSideHealth(); location.hash = 'sides/health'; return; }
     if (go === 'habit') { resetSideHabit(); location.hash = 'sides/habit'; return; }
     if (go === 'photo') { resetSidePhoto(); location.hash = 'sides/photo'; return; }
+    const ho = e.target.closest('[data-hol-open]')?.dataset.holOpen;
+    if (ho) { openHolidaySheet(rerender, { id: ho }); return; }
     const ea = e.target.closest('[data-event-add],[data-event-open]');
     if (ea) { openEventSheet(ea.dataset.eventOpen ? { id: ea.dataset.eventOpen } : { date: todayKey() }, rerender); return; }
     const qe = e.target.closest('[data-qn-edit]')?.dataset.qnEdit;
