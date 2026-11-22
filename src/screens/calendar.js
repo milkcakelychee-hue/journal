@@ -8,7 +8,7 @@ import { nextOccurrence, impNoteHtml, IMP_DOT, IMP_TEXT, NOTE_COLORS } from '../
 import { eventsOn } from './events-today.js';
 import { openEventSheet } from './event-sheet.js';
 import { catOf } from '../lib/categories.js';
-import { openHolidaySheet, holidaysOn } from './holiday-sheet.js';
+import { openHolidaySheet, openWfhSheet, holidaysOn, isWfh } from './holiday-sheet.js';
 
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>'), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>');
@@ -46,9 +46,9 @@ function weekStrip(d, days) {
   return `<section><div class="wk-row">${days.map(day => {
     const k = toKey(day);
     const sel = k === st.sel, today = k === tk;
-    const imp = importantOn(d, k)[0], hol = holidaysOn(d, k)[0];
+    const imp = importantOn(d, k)[0], hol = holidaysOn(d, k)[0], wfh = isWfh(d, k);
     const dot = hasEntry(d, k) ? (sel ? 'var(--ink)' : '#B8B8BE') : 'transparent';
-    return `<button type="button" class="wk-day cal-day${sel ? ' today' : ''}${today && !sel ? ' is-today' : ''}${hol ? ' hol-bg' : ''}" aria-pressed="${sel}"${today ? ' aria-current="date"' : ''}
+    return `<button type="button" class="wk-day cal-day${sel ? ' today' : ''}${today && !sel ? ' is-today' : ''}${hol ? ' hol-bg' : wfh ? ' wfh-bg' : ''}" aria-pressed="${sel}"${today ? ' aria-current="date"' : ''}
       aria-label="${DAYS_SHORT[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}${hol ? ` · วันหยุด ${esc(hol.name)}` : ''}${imp ? ` · วันสำคัญ ${imp.title}` : ''}" data-cal-pick="${k}">
       ${imp ? `<span class="cal-imp" style="background:${impDot(imp)}"></span>` : ''}
       <span class="wk-dn">${DAYS_SHORT[day.getDay()]}</span><span class="wk-num${day.getDay() % 6 === 0 && !sel ? ' we' : ''}">${day.getDate()}</span><span class="wk-dot" style="background:${dot}"></span></button>`;
@@ -61,8 +61,8 @@ function weekView(d) {
   const sel = fromKey(st.sel);
   return `${weekHeader(days)}</div>
     ${weekStrip(d, days)}
-    <div class="mo-panelhead cal-dayhead"><h2 class="h-sec">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2><button type="button" class="hol-add" style="height:32px;border-radius:16px;padding:0 12px" data-hol-add>+ วันหยุด</button></div>
-    ${holidaysOn(d, st.sel).length ? `<div class="hol-row" style="margin:0 4px 12px">${holidaysOn(d, st.sel).map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)}</button>`).join('')}</div>` : ''}
+    <div class="mo-panelhead cal-dayhead"><h2 class="h-sec">${DAYS_SHORT[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2><span class="mo-acts"><button type="button" class="hol-add" data-wfh-add>+ WFH</button><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button></span></div>
+    ${tagRow(d, st.sel, 'margin:0 4px 12px')}
     <div id="todo-slot">${renderTodoCard()}</div>
     ${renderEventsSection({ key: st.sel, title: 'กิจกรรม', empty: 'ยังไม่มีกิจกรรม', after: renderQuickNotesToday(st.sel) })}`;
 }
@@ -73,6 +73,12 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const CHIP_ROWS = 2; // ชิปต่อช่องวันก่อนขึ้น +n
 
 // ช่วงวันของวันหยุดในเดือนนั้น เช่น "26–28 ธ.ค." หรือ "5, 10 ธ.ค."
+// ป้ายของวันที่เลือก: วันหยุด + WFH (แตะเพื่อแก้)
+export function tagRow(d, k, style) {
+  const tags = holidaysOn(d, k).map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)}</button>`);
+  if (isWfh(d, k)) tags.push(`<button type="button" class="hol-tag wfh-tag" data-wfh-add>WFH</button>`);
+  return tags.length ? `<div class="hol-row" style="${style}">${tags.join('')}</div>` : '';
+}
 function holRange(h, y, m) {
   const ns = h.dates.map(fromKey).filter(x => x.getFullYear() === y && x.getMonth() === m).map(x => x.getDate());
   const parts = []; let a = ns[0], p = ns[0];
@@ -98,6 +104,13 @@ function monthView(d) {
       holRuns.push({ hol: true, id: h.id, title: h.name, startDate: ks[a], endDate: ks[i - 1] }); a = i;
     }
   }
+  { // WFH ติดกัน → แถบ "WFH"
+    const ks = [...(d.wfh || [])].sort(); let a = 0;
+    for (let i = 1; i <= ks.length; i++) {
+      if (i < ks.length && toKey(addDays(fromKey(ks[i - 1]), 1)) === ks[i]) continue;
+      holRuns.push({ hol: true, wfh: true, id: 'wfh', title: 'WFH', startDate: ks[a], endDate: ks[i - 1] }); a = i;
+    }
+  }
   const holMulti = holRuns.filter(r => r.endDate !== r.startDate);
   let rows = '';
   for (let w = 0; w < weeks; w++) {
@@ -105,7 +118,7 @@ function monthView(d) {
     const keys = days.map(toKey);
     // กิจกรรมหลายวัน → แถบข้ามช่อง จัดเลน (สูงสุด CHIP_ROWS เลน)
     const multi = [...holMulti, ...d.events.filter(e => e.endDate && e.endDate !== e.startDate)].filter(e => e.startDate <= keys[6] && e.endDate >= keys[0])
-      .sort((a, b) => (b.hol ? 1 : 0) - (a.hol ? 1 : 0) || (a.startDate < b.startDate ? -1 : 1));
+      .sort((a, b) => (b.hol ? (b.wfh ? 1 : 2) : 0) - (a.hol ? (a.wfh ? 1 : 2) : 0) || (a.startDate < b.startDate ? -1 : 1));
     const lanes = []; const bars = []; const laneUse = Array.from({ length: 7 }, () => 0);
     for (const e of multi) {
       const s0 = Math.max(0, keys.findIndex(k => k >= e.startDate)), e0 = keys.findLastIndex(k => k <= e.endDate);
@@ -123,9 +136,10 @@ function monthView(d) {
       const imp = importantOn(d, k);
       const single = eventsOn(d, k).filter(e => !e.endDate || e.endDate === e.startDate);
       const hasNote = d.quickNotes.some(n => n.date === k);
-      const hol = holidaysOn(d, k);
+      const hol = holidaysOn(d, k), wfh = isWfh(d, k);
       const chips = [
         ...hol.filter(h => !holMulti.some(r => r.id === h.id && r.startDate <= k && k <= r.endDate)).map(h => `<span class="mo-chip hol">${esc(h.name)}</span>`),
+        ...(wfh && !holMulti.some(r => r.wfh && r.startDate <= k && k <= r.endDate) ? ['<span class="mo-chip wfh">WFH</span>'] : []),
         // วันสำคัญ: แสดงแค่จุดมุมช่อง ไม่แสดงชื่อ (บลูขอ 22 พ.ย. 2569 · สีโน้ตอาจซ้ำกับหมวดกิจกรรม)
         ...single.map(e => { const c = cat(e.categoryId); return `<span class="mo-chip" style="background:${c.bg};color:${c.fg}">${esc(e.title)}</span>`; }),
         ...(hasNote ? ['<span class="mo-chip note">โน้ต</span>'] : []),
@@ -136,13 +150,13 @@ function monthView(d) {
       const shown = chips.slice(0, room);
       const more = chips.length - shown.length + Math.max(0, hiddenBars);
       const cls = k === st.sel ? 'sel' : k === tk ? 'today' : '';
-      cells += `<button type="button" class="mo-cell${br}${hol.length ? ' hol-bg' : ''}" aria-label="${day.getDate()} ${MONTHS[m]}${hol[0] ? ` · วันหยุด ${esc(hol[0].name)}` : ''}${imp[0] ? ` · วันสำคัญ ${esc(imp[0].title)}` : ''}"${k === tk ? ' aria-current="date"' : ''} data-cal-pick="${k}">
+      cells += `<button type="button" class="mo-cell${br}${hol.length ? ' hol-bg' : wfh ? ' wfh-bg' : ''}" aria-label="${day.getDate()} ${MONTHS[m]}${hol[0] ? ` · วันหยุด ${esc(hol[0].name)}` : ''}${wfh ? ' · WFH' : ''}${imp[0] ? ` · วันสำคัญ ${esc(imp[0].title)}` : ''}"${k === tk ? ' aria-current="date"' : ''} data-cal-pick="${k}">
         ${imp[0] ? `<span class="cal-imp mo-imp" style="background:${impDot(imp[0])}"></span>` : ''}
         <span class="mo-num ${cls}${day.getDay() % 6 === 0 ? ' we' : ''}">${day.getDate()}</span>
         <span class="mo-chips">${'<span class="mo-chip spacer"></span>'.repeat(used)}${shown.join('')}${more > 0 ? `<span class="mo-more">+${more}</span>` : ''}</span></button>`;
     });
     const barHtml = bars.map(({ e, s0, e0, lane }) => {
-      const c = e.hol ? { bg: '#FCEBEB', fg: '#A32D2D' } : cat(e.categoryId);
+      const c = e.wfh ? { bg: '#E3E6F8', fg: '#33408F' } : e.hol ? { bg: '#FCEBEB', fg: '#A32D2D' } : cat(e.categoryId);
       return `<div class="mo-bar" style="top:${32 + lane * 16}px;left:calc(${(s0 / 7 * 100).toFixed(4)}% + 3px);width:calc(${((e0 - s0 + 1) / 7 * 100).toFixed(4)}% - 6px);background:${c.bg};color:${c.fg}">${esc(e.title)}</div>`;
     }).join('');
     rows += `<div class="mo-week">${cells}${barHtml}</div>`;
@@ -159,10 +173,10 @@ function monthView(d) {
     <div class="mo card"><div class="mo-head">${heads}</div>${rows}</div>
     ${monthHols.length ? `<div class="hol-row">${monthHols.map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)} ${holRange(h, y, m)}</button>`).join('')}</div>` : ''}
     <div>
-      <div class="mo-panelhead"><h2 class="h-sec">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2>
-        <span class="mo-acts"><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button><button type="button" class="mo-add" aria-label="เพิ่มกิจกรรมวันนี้" data-event-add>${PLUS}</button></span></div>
+      <div class="mo-panelhead"><h2 class="h-sec">${DAYS_SHORT[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2>
+        <span class="mo-acts"><button type="button" class="hol-add" data-wfh-add>+ WFH</button><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button><button type="button" class="mo-add" aria-label="เพิ่มกิจกรรมวันนี้" data-event-add>${PLUS}</button></span></div>
       <div class="mo-panel">
-        ${selHols.length ? `<div class="hol-row" style="margin:0 0 12px">${selHols.map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)}</button>`).join('')}</div>` : ''}
+        ${tagRow(d, st.sel, 'margin:0 0 12px')}
         ${imps.length ? `<div class="mo-imps">${imps.map((x, i) => impNoteHtml(x, Math.round((sel - t0) / 864e5), i, sel)).join('')}</div>` : ''}
         ${eventsListHtml(d, st.sel)}
       </div>
@@ -215,6 +229,7 @@ export function mountCalendar(root, rerenderPage) {
   bindTodo(root, () => { root.querySelector('#todo-slot').innerHTML = renderTodoCard(); });
   root.addEventListener('click', e => {
     const ho = e.target.closest('[data-hol-add],[data-hol-open]');
+    if (e.target.closest('[data-wfh-add]')) { openWfhSheet(rerenderPage, st.sel); return; }
     if (ho) { openHolidaySheet(rerenderPage, ho.dataset.holOpen ? { id: ho.dataset.holOpen } : { date: st.sel }); return; }
     const ea = e.target.closest('[data-event-add],[data-event-open]');
     if (ea) { openEventSheet(ea.dataset.eventOpen ? { id: ea.dataset.eventOpen } : { date: st.sel }, rerenderPage); return; }

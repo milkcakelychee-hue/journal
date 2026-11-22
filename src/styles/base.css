@@ -848,3 +848,14 @@ button.ea-date { border: 0; margin: 0; font-family: inherit; text-align: left; }
 .mo-acts .hol-add { height: 32px; border-radius: 16px; padding: 0 12px; }
 .wk-day.hol-bg:not(.cal-day.today) { background-image: repeating-linear-gradient(45deg, rgba(226,75,74,0.18) 0 1px, transparent 1px 7px); }
 .mo-num.we:not(.sel), .wk-num.we { color: #A3A3A9; } /* เสาร์อาทิตย์ = เทาจาง */
+/* WFH · ลายเส้นน้ำเงินคราม + ป้าย */
+.wfh-bg { background-color: #fff; background-image: repeating-linear-gradient(45deg, rgba(63,81,181,0.20) 0 1px, transparent 1px 7px); }
+.wk-day.wfh-bg:not(.cal-day.today) { background-image: repeating-linear-gradient(45deg, rgba(63,81,181,0.22) 0 1px, transparent 1px 7px); }
+.mo-chip.wfh { background: #E3E6F8; color: #33408F; }
+.hol-tag.wfh-tag { background: #E3E6F8; color: #33408F; }
+.hd-cal.wfh .hd-d.on { background-image: repeating-linear-gradient(45deg, rgba(63,81,181,0.28) 0 1px, transparent 1px 6px); box-shadow: inset 0 0 0 1.5px #5C6BC0; color: #33408F; }
+.mo-panelhead .mo-acts .hol-add { height: 32px; border-radius: 16px; padding: 0 12px; }
+.mo-panelhead .h-sec { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mo-acts { flex: none; gap: 6px; }
+.hol-add { white-space: nowrap; }
+.mo-panelhead .mo-acts .hol-add { padding: 0 10px; }

@@ -28,10 +28,23 @@ export function isDue(h, k) {
   return true;
 }
 const done = (d, h, k) => !!d.habitLog[h.id]?.[k];
-const freqLabel = h => { const f = h.freq || { kind: 'daily' }; return f.kind === 'daily' ? 'ทุกวัน' : f.kind === 'alt' ? 'วันเว้นวัน' : [...(f.days || [])].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(i => DAYS_SHORT[i]).join(', '); };
+// ต่อสัปดาห์: เป้าของเดือน = สัปดาห์ละ N วัน × วันในเดือน ÷ 7 (ปัดเศษ)
+export const monthTarget = (h, y, m) => Math.round((h.freq?.per || 1) * new Date(y, m + 1, 0).getDate() / 7);
+const weekly = h => h.freq?.kind === 'weekly';
+const freqLabel = (h, y, m) => { const f = h.freq || { kind: 'daily' }; return f.kind === 'weekly' ? `สัปดาห์ละ ${f.per} วัน · ${monthTarget(h, y, m)} วัน/เดือน` : f.kind === 'daily' ? 'ทุกวัน' : f.kind === 'alt' ? 'วันเว้นวัน' : [...(f.days || [])].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(i => DAYS_SHORT[i]).join(', '); };
 
 // streak: นับวันที่ต้องทำย้อนจากวันนี้ (วันนี้ยังไม่ติ๊ก = เริ่มนับจากวันที่ต้องทำก่อนหน้า)
 export function streak(d, h) {
+  if (weekly(h)) { // นับสัปดาห์ติดกันที่ทำครบ (สัปดาห์นี้ยังไม่ครบ = ยังไม่นับ ไม่ตัด)
+    const ws = d.settings.weekStart, t = fromKey(todayKey());
+    let w0 = addDays(t, -((t.getDay() - ws + 7) % 7)), n = 0;
+    for (let i = 0; i < 520; i++, w0 = addDays(w0, -7)) {
+      let c = 0; for (let j = 0; j < 7; j++) if (done(d, h, toKey(addDays(w0, j)))) c++;
+      if (h.startDate && toKey(addDays(w0, 6)) < h.startDate) break;
+      if (c >= h.freq.per) n++; else if (i > 0) break;
+    }
+    return n;
+  }
   let k = todayKey(), n = 0, first = true;
   for (let i = 0; i < 3660; i++, k = toKey(addDays(fromKey(k), -1))) {
     if (h.startDate && k < h.startDate) break;
@@ -53,16 +66,17 @@ function card(d, h) {
     due++;
     const dn = done(d, h, k); if (dn) ok++;
     const ring = k === tk ? ' today' : '';
-    cells += k > tk ? '<span class="hb-c fut"></span>'
+    cells += k > tk || (weekly(h) && k < tk && !dn) ? '<span class="hb-c fut"></span>'
       : k === tk && !dn ? `<span class="hb-c${ring}" style="border:1.5px solid ${c}"></span>`
       : `<span class="hb-c${ring}" style="background:${dn ? c : lt}"></span>`;
   }
-  const quit = h.type === 'quit', s = streak(d, h), unit = (h.freq?.kind || 'daily') === 'daily' ? 'วัน' : 'ครั้ง';
+  const quit = h.type === 'quit', s = streak(d, h), unit = weekly(h) ? 'สัปดาห์' : (h.freq?.kind || 'daily') === 'daily' ? 'วัน' : 'ครั้ง';
+  if (weekly(h)) due = monthTarget(h, y, m);
   const todayDue = isDue(h, tk), todayDone = done(d, h, tk);
   const lab = quit ? 'วันนี้ไม่ได้ทำ' : 'ทำวันนี้แล้ว';
   return `<div class="hb-card" data-hb-edit="${h.id}">
     <div class="hb-l"><span class="hb-st" style="color:${c}">${FLAME(c)}${quit ? `เลิกได้แล้ว ${s} วัน` : `ติดต่อกัน ${s} ${unit}`}</span>
-      <span class="hb-name">${esc(h.name)}</span><span class="hb-fq">${freqLabel(h)}</span>
+      <span class="hb-name">${esc(h.name)}</span><span class="hb-fq">${freqLabel(h, y, m)}</span>
       <span class="hb-cnt">${quit ? 'ไม่ได้ทำ' : 'ทำแล้ว'} ${ok}/${due} วัน · ${MONTHS_SHORT[m]}</span></div>
     <div class="hb-r">${todayDue ? `<button type="button" class="hb-chk" role="checkbox" aria-checked="${todayDone}" aria-label="${esc(h.name)} ${lab}" data-hb-toggle="${h.id}">${todayDone ? `<span class="on" style="background:${c}">${CHECK}</span>` : '<span></span>'}</button>` : '<span class="hb-chk-sp"></span>'}
       <div class="hb-grid" role="img" aria-label="${quit ? 'ไม่ได้ทำ' : 'ทำแล้ว'} ${ok}/${due} วัน เดือน${MONTHS[m]}">${cells}</div></div>
@@ -88,10 +102,11 @@ function yearCard(d, h) {
       if (k > tk) { col += '<span class="hy-c" style="background:#EFEFF2"></span>'; continue; }
       due++;
       const dn = done(d, h, k); if (dn) ok++;
-      col += k === tk && !dn ? `<span class="hy-c" style="border:1px solid ${c}"></span>` : `<span class="hy-c" style="background:${dn ? c : lt}"></span>`;
+      col += weekly(h) && k < tk && !dn ? '<span class="hy-c" style="background:#EFEFF2"></span>' : k === tk && !dn ? `<span class="hy-c" style="border:1px solid ${c}"></span>` : `<span class="hy-c" style="background:${dn ? c : lt}"></span>`;
     }
     cols += `<span class="hy-col">${col}</span>`;
   }
+  if (weekly(h)) due = Array.from({ length: 12 }, (_, m) => monthTarget(h, y, m)).reduce((a, b) => a + b, 0);
   const quit = h.type === 'quit', txt = quit ? `ไม่ได้ทำ ${ok}/${due} วัน` : `ทำแล้ว ${ok}/${due} ครั้ง`;
   const todayDue = isDue(h, tk), todayDone = done(d, h, tk);
   return `<div class="hy-card" data-hb-edit="${h.id}">
