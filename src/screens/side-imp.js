@@ -25,6 +25,13 @@ export function impItems(d) {
   return d.importantDates.map(x => { const at = nextOccurrence(x, t0); return { ...x, at, inDays: Math.round((at - t0) / 864e5) }; }).sort((a, b) => a.at - b.at);
 }
 
+// วันสำคัญเดือนหน้า: หาครั้งที่เกิดนับจากวันที่ 1 ของเดือนหน้า (ทุกเดือนจึงขึ้นทั้งเดือนนี้และเดือนหน้า)
+function nextMonthItems(d) {
+  const t = new Date(), t0 = new Date(t.getFullYear(), t.getMonth(), t.getDate()), nm = new Date(t.getFullYear(), t.getMonth() + 1, 1);
+  return d.importantDates.map(x => { const at = nextOccurrence(x, nm); return { ...x, at, inDays: Math.round((at - t0) / 864e5) }; })
+    .filter(x => x.at.getFullYear() === nm.getFullYear() && x.at.getMonth() === nm.getMonth()).sort((a, b) => a.at - b.at);
+}
+
 function bigNote(x, k) {
   const [c1, c2] = NOTE_COLORS[x.noteColor] || NOTE_COLORS.yellow;
   const [l, top, rot, op] = STACK[k];
@@ -37,7 +44,7 @@ export function renderSideImp() {
   const d = getData(), t = new Date(), fromToday = location.hash.split('/')[2] === 'today';
   const items = impItems(d).filter(x => x.inDays >= 0);
   const ym = (dt) => dt.getFullYear() * 12 + dt.getMonth(), cur = ym(t);
-  const thisM = items.filter(x => ym(x.at) === cur), nextM = items.filter(x => ym(x.at) === cur + 1);
+  const thisM = items.filter(x => ym(x.at) === cur), nextM = nextMonthItems(d);
   const nm = new Date(t.getFullYear(), t.getMonth() + 1, 1);
   if (st.i >= nextM.length) st.i = 0;
   const stack = nextM.length ? [0, 1, 2].filter(k => k < nextM.length).map(k => bigNote(nextM[(st.i + k) % nextM.length], k)).reverse().join('') : '';
@@ -57,7 +64,7 @@ export function renderSideImp() {
 }
 
 export function mountSideImp(root, rerender) {
-  const n = () => impItems(getData()).filter(x => x.inDays >= 0 && (x.at.getFullYear() * 12 + x.at.getMonth()) === (new Date().getFullYear() * 12 + new Date().getMonth() + 1)).length;
+  const n = () => nextMonthItems(getData()).length;
   const step = dir => { const c = n(); if (c > 1) { st.i = (st.i + dir + c) % c; rerender(); } };
   let x0 = null, moved = false;
   root.addEventListener('pointerdown', e => { if (e.target.closest('[data-ip-stack]')) { x0 = e.clientX; moved = false; } });
