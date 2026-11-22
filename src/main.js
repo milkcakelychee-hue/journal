@@ -2,6 +2,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import { renderTabbar, TABS } from './ui/tabbar.js';
 import { placeholder } from './screens/placeholder.js';
+import { renderSides, mountSides } from './screens/sides.js';
 import * as store from './store.js';
 const { loadData } = store;
 if (import.meta.env.DEV) window.__store = store; // ใช้ทดสอบตอนพัฒนาเท่านั้น
@@ -10,15 +11,15 @@ import { renderCalendar, mountCalendar, resetCalendar } from './screens/calendar
 import { resetTodoUi } from './screens/todo.js';
 import { resetMoodUi } from './screens/mood-today.js';
 
-const SCREENS = { today: renderToday, calendar: renderCalendar };
-const MOUNTS = { today: mountToday, calendar: mountCalendar };
+const SCREENS = { today: renderToday, calendar: renderCalendar, sides: renderSides };
+const MOUNTS = { today: mountToday, calendar: mountCalendar, sides: mountSides };
 
 for (const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
 document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
 const app = document.getElementById('app');
 const currentTab = () => {
-  const id = location.hash.slice(1);
+  const id = location.hash.slice(1).split('/')[0];
   return TABS.some(t => t.id === id) ? id : 'today';
 };
 

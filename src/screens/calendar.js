@@ -1,4 +1,4 @@
-// ปฏิทิน · สัปดาห์ (Cal-Week / Cal-WeekEmpty) · เดือน/ปี ทำในขั้นถัดไป
+// ปฏิทิน · สัปดาห์ / เดือน / ปี
 import { getData } from '../store.js';
 import { DAYS, DAYS_SHORT, MONTHS, MONTHS_SHORT, toKey, fromKey, todayKey, weekOf, addDays, be } from '../lib/date-th.js';
 import { renderTodoCard, bindTodo, setTodoDay } from './todo.js';
@@ -6,6 +6,8 @@ import { renderEventsSection } from './events-today.js';
 import { renderQuickNotesToday, openQuickNote } from './quicknote.js';
 import { nextOccurrence, impNoteHtml, IMP_DOT, IMP_TEXT, NOTE_COLORS } from '../lib/important.js';
 import { eventsOn } from './events-today.js';
+import { openEventSheet } from './event-sheet.js';
+import { catOf } from '../lib/categories.js';
 
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>'), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>');
@@ -76,7 +78,7 @@ function monthView(d) {
   const start = new Date(y, m, 1 - off);
   const weeks = Math.ceil((off + new Date(y, m + 1, 0).getDate()) / 7);
   const tk = todayKey();
-  const cat = id => d.categories.find(c => c.id === id) || d.categories.find(c => c.fallback) || d.categories[0];
+  const cat = id => catOf(d, id);
   const heads = Array.from({ length: 7 }, (_, i) => `<div class="mo-dn">${DAYS_SHORT[(ws + i) % 7]}</div>`).join('');
   let rows = '';
   for (let w = 0; w < weeks; w++) {
@@ -141,6 +143,30 @@ function monthView(d) {
     </div>`;
 }
 
+// ---------- มุมมองปี · Cal-Year ----------
+// วันสำคัญ = วงสีโน้ต · วันมีกิจกรรม = เทา #E1E1E6 · วันนี้ = ดำ · ไม่แสดงอารมณ์ · แตะเดือน → มุมมองเดือนนั้น
+function yearView(d) {
+  const y = st.month.y, ws = d.settings.weekStart, tk = todayKey(), t = new Date();
+  const months = MONTHS_SHORT.map((name, m) => {
+    const off = (new Date(y, m, 1).getDay() - ws + 7) % 7;
+    const n = new Date(y, m + 1, 0).getDate();
+    let cells = '<span class="yr-blank"></span>'.repeat(off);
+    for (let i = 1; i <= n; i++) {
+      const k = toKey(new Date(y, m, i));
+      const imp = importantOn(d, k)[0];
+      const ev = d.events.some(e => e.startDate <= k && k <= (e.endDate || e.startDate));
+      const cls = k === tk ? ' today' : ev ? ' ev' : '';
+      cells += `<span class="yr-d${cls}"${imp && k !== tk ? ` style="box-shadow:0 0 0 1.5px ${impDot(imp)}"` : ''}>${i}</span>`;
+    }
+    const cur = y === t.getFullYear() && m === t.getMonth();
+    return `<button type="button" class="yr-mo" aria-label="${MONTHS[m]} ${be(y)}" data-cal-ym="${m}"><span class="yr-name${cur ? ' cur' : ''}">${name}</span><span class="yr-grid">${cells}</span></button>`;
+  }).join('');
+  return `<div class="cal-nav"><button type="button" class="cal-arrow" aria-label="ก่อนหน้า" data-cal-year="-1">${L}</button>
+      <div class="cal-range">${be(y)}</div>
+      <button type="button" class="cal-arrow" aria-label="ถัดไป" data-cal-year="1">${R}</button></div></div>
+    <div class="yr">${months}</div>`;
+}
+
 // รายการในแผงวัน: กิจกรรม → Quick note (ตามบอร์ด Cal-Month) · ว่าง = "ยังไม่มีกิจกรรม"
 function eventsListHtml(d, key) {
   const html = renderEventsSection({ key, title: '', empty: 'ยังไม่มีกิจกรรม', after: renderQuickNotesToday(key) });
@@ -151,7 +177,7 @@ function eventsListHtml(d, key) {
 export function renderCalendar() {
   const d = getData();
   setTodoDay(st.sel);
-  const body = st.view === 'week' ? weekView(d) : st.view === 'month' ? monthView(d) : '</div>';
+  const body = st.view === 'week' ? weekView(d) : st.view === 'month' ? monthView(d) : yearView(d);
   return `<div class="today">
     <div><div style="height:52px;display:flex;align-items:center"><h1 class="h-page">ปฏิทิน</h1></div>
       ${segment()}
@@ -162,7 +188,9 @@ export function renderCalendar() {
 export function mountCalendar(root, rerenderPage) {
   bindTodo(root, () => { root.querySelector('#todo-slot').innerHTML = renderTodoCard(); });
   root.addEventListener('click', e => {
-    const b = e.target.closest('[data-cal-view],[data-cal-step],[data-cal-pick],[data-qn-edit],[data-cal-month]');
+    const ea = e.target.closest('[data-event-add],[data-event-open]');
+    if (ea) { openEventSheet(ea.dataset.eventOpen ? { id: ea.dataset.eventOpen } : { date: st.sel }, rerenderPage); return; }
+    const b = e.target.closest('[data-cal-view],[data-cal-step],[data-cal-pick],[data-qn-edit],[data-cal-month],[data-cal-year],[data-cal-ym]');
     if (!b) return;
     const ds = b.dataset;
     if (ds.calView) st.view = ds.calView;
@@ -174,6 +202,13 @@ export function mountCalendar(root, rerenderPage) {
       // เลื่อนเดือน → เลือกวันที่ 1 (หรือวันนี้ถ้าอยู่เดือนนี้)
       const t = new Date();
       st.sel = st.month.y === t.getFullYear() && st.month.m === t.getMonth() ? todayKey() : toKey(new Date(st.month.y, st.month.m, 1));
+    }
+    else if (ds.calYear) { st.month = { y: st.month.y + Number(ds.calYear), m: st.month.m }; rerenderPage(); return; }
+    else if (ds.calYm) {
+      const t = new Date(), y = st.month.y, m = Number(ds.calYm);
+      st.view = 'month'; st.month = { y, m };
+      st.sel = y === t.getFullYear() && m === t.getMonth() ? todayKey() : toKey(new Date(y, m, 1));
+      rerenderPage(); return;
     }
     else if (ds.qnEdit) { openQuickNote(rerenderPage, ds.qnEdit); return; }
     const sd = fromKey(st.sel); if (!ds.calMonth) st.month = { y: sd.getFullYear(), m: sd.getMonth() };

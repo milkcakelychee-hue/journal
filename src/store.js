@@ -36,6 +36,8 @@ export async function loadData() {
   const base = createDefaultData();
   data = saved ? { ...base, ...saved, settings: { ...base.settings, ...saved.settings } } : base;
   // เติมแถบสีให้หมวดที่สร้างก่อนมีช่อง accent
+  // เติมสี/ไอคอน (ดัชนีใน CAT_COLORS / CAT_ICONS) ให้หมวดที่สร้างก่อนมีช่องนี้
+  data.categories.forEach(c => { const i = base.categories.findIndex(b => b.name === c.name); if (c.color == null) c.color = i < 0 ? 7 : i; if (c.icon == null) c.icon = i < 0 ? 7 : i; });
   for (const c of data.categories) if (!c.accent) c.accent = base.categories.find(b => b.name === c.name)?.accent || c.fg;
   if (!saved) await persist();
   return data;

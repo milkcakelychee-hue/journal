@@ -1,3 +1,6 @@
+import { resetSideHealth } from './side-health.js';
+import { resetSideHabit } from './side-habit.js';
+import { openEventSheet } from './event-sheet.js';
 // หน้าวันนี้ · บอร์ด Main
 import { getData } from '../store.js';
 import { renderTodoCard, bindTodo } from './todo.js';
@@ -62,7 +65,7 @@ export function renderToday() {
   </div>`;
 }
 
-export function mountToday(root) {
+export function mountToday(root, rerender) {
   const slot = () => root.querySelector('#todo-slot');
   bindTodo(root, () => { slot().innerHTML = renderTodoCard(); });
   // บันทึกอารมณ์แล้ว แถบสัปดาห์ด้านบนต้องเปลี่ยนสีจุดด้วย → วาดทั้งหน้าใหม่
@@ -74,6 +77,10 @@ export function mountToday(root) {
     const go = e.target.closest('[data-go]')?.dataset.go;
     const redrawQn = () => { root.querySelector('#qn-slot').innerHTML = renderQuickNotesToday(); };
     if (go === 'quicknote') openQuickNote(redrawQn);
+    if (go === 'health') { resetSideHealth(); location.hash = 'sides/health'; return; }
+    if (go === 'habit') { resetSideHabit(); location.hash = 'sides/habit'; return; }
+    const ea = e.target.closest('[data-event-add],[data-event-open]');
+    if (ea) { openEventSheet(ea.dataset.eventOpen ? { id: ea.dataset.eventOpen } : { date: todayKey() }, rerender); return; }
     const qe = e.target.closest('[data-qn-edit]')?.dataset.qnEdit;
     if (qe) openQuickNote(redrawQn, qe);
   });

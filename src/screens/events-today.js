@@ -1,3 +1,4 @@
+import { catOf, catIcon } from '../lib/categories.js';
 // กิจกรรมวันนี้ (ดึงจากปฏิทินเท่านั้น) · บอร์ด Main / Today-Empty
 import { getData } from '../store.js';
 import { todayKey } from '../lib/date-th.js';
@@ -22,12 +23,11 @@ export const renderEventsToday = () => renderEventsSection({ key: todayKey(), ti
 export function renderEventsSection({ key, title, sub = '', empty, after = '' }) {
   const d = getData();
   const list = eventsOn(d, key);
-  const fallback = d.categories.find(c => c.fallback) || d.categories[0];
   const body = list.length ? `<div class="ev-list">${list.map(e => {
-    const c = d.categories.find(x => x.id === e.categoryId) || fallback;
+    const c = catOf(d, e.categoryId);
     const people = (e.peopleIds || []).map(id => d.people.find(p => p.id === id)).filter(Boolean);
     const place = d.places.find(p => p.id === e.placeId);
-    const chips = [...people.map(p => chip(PERSON, p.name, c)), place ? chip(PIN, place.name, c) : ''].join('');
+    const chips = [e.categoryId && c.id ? chip(catIcon(c, 12), c.name, c) : '', ...people.map(p => chip(PERSON, p.name, c)), place ? chip(PIN, place.name, c) : ''].join('');
     return `<div class="ev-card"><div class="ev-bar" style="background:${c.accent}"></div>
       <button type="button" class="ev-btn" data-event-open="${e.id}">
         <span class="ev-top"><span class="ev-title">${esc(e.title)}</span><span class="ev-time">${e.time || 'ทั้งวัน'}</span></span>

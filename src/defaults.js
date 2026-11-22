@@ -35,7 +35,7 @@ export function createDefaultData() {
     },
     moods: MOODS.map(([name, color, group], i) => ({ id: id(), name, color, group, order: i })),
     moodLog: {},               // { 'YYYY-MM-DD': { moodId, note } }
-    categories: CATEGORIES.map(([name, bg, fg, accent], i) => ({ id: id(), name, bg, fg, accent, order: i, fallback: name === 'อื่น ๆ' })),
+    categories: CATEGORIES.map(([name, bg, fg, accent], i) => ({ id: id(), name, bg, fg, accent, color: i, icon: i, order: i, fallback: name === 'อื่น ๆ' })),
     people: [],
     places: [],
     events: [],                // { id, title, startDate, endDate, time|null, categoryId, peopleIds[], placeId }
