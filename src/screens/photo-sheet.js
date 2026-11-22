@@ -43,3 +43,22 @@ export function openPhotoSheet(date, onSaved) {
     },
   });
 }
+
+// แก้ไข/เพิ่มคำอธิบายของภาพ (ไม่ต้องเลือกภาพใหม่)
+export function openNoteSheet(date, onSaved) {
+  const d0 = fromKey(date);
+  let note = getData().photos[date]?.note || '';
+  openSheet({
+    title: `${note ? 'แก้ไขคำอธิบาย' : 'เพิ่มคำอธิบาย'} · ${DAYS_SHORT[d0.getDay()]} ${d0.getDate()} ${MONTHS_SHORT[d0.getMonth()]}`,
+    body: () => `<label class="pa-note" style="margin-top:0"><span class="pa-nl">โน้ตสั้น ๆ</span><textarea maxlength="100" rows="3" aria-label="โน้ตสั้น ๆ" data-pa-note>${esc(note)}</textarea><span class="pa-cnt" data-pa-cnt>${note.length}/100</span></label>
+      <button type="button" class="btn-primary" style="margin-top:16px" data-pa-save>บันทึก</button>`,
+    mount(el, close) {
+      el.addEventListener('input', e => { if (e.target.matches('[data-pa-note]')) { note = e.target.value.slice(0, 100); el.querySelector('[data-pa-cnt]').textContent = `${note.length}/100`; } });
+      el.addEventListener('click', e => {
+        if (!e.target.closest('[data-pa-save]')) return;
+        update(d => { if (d.photos[date]) { d.photos[date].note = note.trim(); d.photos[date].updatedAt = Date.now(); } });
+        close(); onSaved?.();
+      });
+    },
+  });
+}

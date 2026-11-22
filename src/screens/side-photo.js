@@ -2,7 +2,7 @@
 import { getData } from '../store.js';
 import { DAYS_SHORT, MONTHS, toKey, todayKey, fromKey, addDays } from '../lib/date-th.js';
 import { photoURL } from '../lib/photos.js';
-import { openPhotoSheet } from './photo-sheet.js';
+import { openPhotoSheet, openNoteSheet } from './photo-sheet.js';
 import { openPhotoSlide } from './photo-slide.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -41,8 +41,9 @@ function monthView(d) {
   if (sel) {
     const sd = fromKey(sel), u = photoURL(sel, () => redraw()), note = d.photos[sel].note;
     card = `<div class="card ph-card"><div class="ph-ch"><span>${DAYS_SHORT[sd.getDay()]} ${sd.getDate()} ${MONTHS[sd.getMonth()]}</span><button type="button" class="ph-slide" data-ph-slide>ดูแบบสไลด์</button></div>
-      <div class="ph-big">${u ? `<img src="${u}" alt="ภาพวันที่ ${sd.getDate()} ${MONTHS[sd.getMonth()]}">` : ''}</div>
+      <div class="sl-frame ph-big"><span class="stamp"></span>${u ? `<img src="${u}" alt="ภาพวันที่ ${sd.getDate()} ${MONTHS[sd.getMonth()]}">` : ''}</div>
       <button type="button" class="ph-change" data-ph-add="${sel}">${CAM}เปลี่ยนภาพ</button>
+      <button type="button" class="ph-change" data-ph-note="${sel}">${note ? 'แก้ไขคำอธิบาย' : 'เพิ่มคำอธิบาย'}</button>
       ${note ? `<div class="ph-note">${esc(note)}</div>` : ''}</div>`;
   }
   return `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="ก่อนหน้า" data-ph-month="-1">${L}</button>
@@ -87,11 +88,12 @@ export function renderSidePhoto() {
 export function mountSidePhoto(root, rerender) {
   redraw = rerender;
   root.addEventListener('click', e => {
-    const b = e.target.closest('[data-ph-day],[data-ph-add],[data-ph-month],[data-ph-view],[data-ph-year],[data-ph-folder],[data-ph-slide]');
+    const b = e.target.closest('[data-ph-day],[data-ph-add],[data-ph-note],[data-ph-month],[data-ph-view],[data-ph-year],[data-ph-folder],[data-ph-slide]');
     if (!b) return;
     const ds = b.dataset;
     if (ds.phDay) st.sel = ds.phDay;
     else if (ds.phAdd) { openPhotoSheet(ds.phAdd, () => { st.sel = ds.phAdd; rerender(); }); return; }
+    else if (ds.phNote) { openNoteSheet(ds.phNote, rerender); return; }
     else if (ds.phMonth) { const n = st.m + Number(ds.phMonth); st.y += Math.floor(n / 12); st.m = (n + 12) % 12; }
     else if (ds.phView) st.view = ds.phView;
     else if (ds.phYear) st.y += Number(ds.phYear);
