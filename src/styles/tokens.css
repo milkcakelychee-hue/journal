@@ -1,0 +1,33 @@
+/* ค่าจากบอร์ด Style / Style-2 และ HANDOFF ข้อ 6 */
+:root {
+  --ink: #1C1C1E;
+  --muted: #66666B;
+  --fade: #A3A3A9;
+  --gray-soft: #F3F3F5;
+  --border: #E8E8EC;
+  --card: #FFFFFF;
+  --danger: #C2433A;
+
+  --bg-top: #DADADF;
+  --bg-fill: linear-gradient(180deg, #DADADF 0px, #ECECEF 130px, #F8F8FA 240px, #FFFFFF 340px);
+
+  --note-yellow: #F5E8B8;
+  --note-blue: #D3E1EC;
+  --note-pink: #F3D6D1;
+  --note-green: #D6E4CF;
+  --quick-note: #F7F4EA;
+
+  --period-heavy: #8E2C44;
+  --period-mid: #B8475E;
+  --period-light: #D98A9C;
+  --sick-hatch: #C4B7EA;
+  --cal-busy: #E1E1E6;
+
+  --font-head: 'Prompt', 'Bai Jamjuree', sans-serif;
+  --font-body: 'Bai Jamjuree', 'Prompt', sans-serif;
+
+  --radius-card: 16px;
+  --radius-sm: 12px;
+  --card-ring: 0 0 0 1px var(--border);
+  --gutter: 16px;
+}
