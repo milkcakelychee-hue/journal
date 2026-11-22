@@ -3,6 +3,7 @@ import { getData } from '../store.js';
 import { DAYS_SHORT, MONTHS, toKey, todayKey, fromKey, addDays } from '../lib/date-th.js';
 import { photoURL } from '../lib/photos.js';
 import { openPhotoSheet, openNoteSheet } from './photo-sheet.js';
+const PEN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 H8 L19 9 L15 5 L4 16 Z"/><path d="M13 7 L17 11"/></svg>';
 import { openPhotoSlide } from './photo-slide.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -43,8 +44,8 @@ function monthView(d) {
     card = `<div class="card ph-card"><div class="ph-ch"><span>${DAYS_SHORT[sd.getDay()]} ${sd.getDate()} ${MONTHS[sd.getMonth()]}</span><button type="button" class="ph-slide" data-ph-slide>ดูแบบสไลด์</button></div>
       <div class="sl-frame ph-big"><span class="stamp"></span>${u ? `<img src="${u}" alt="ภาพวันที่ ${sd.getDate()} ${MONTHS[sd.getMonth()]}">` : ''}</div>
       <button type="button" class="ph-change" data-ph-add="${sel}">${CAM}เปลี่ยนภาพ</button>
-      <button type="button" class="ph-change" data-ph-note="${sel}">${note ? 'แก้ไขคำอธิบาย' : 'เพิ่มคำอธิบาย'}</button>
-      ${note ? `<div class="ph-note">${esc(note)}</div>` : ''}</div>`;
+      ${note ? `<div class="ph-note">${esc(note)}<button type="button" class="ph-pen" aria-label="แก้ไขคำอธิบาย" data-ph-note="${sel}">${PEN}</button></div>`
+        : `<button type="button" class="ph-change" data-ph-note="${sel}">เพิ่มคำอธิบาย</button>`}</div>`;
   }
   return `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="ก่อนหน้า" data-ph-month="-1">${L}</button>
       <div class="sm-title">${MONTHS[m]} <span style="color:var(--muted)">${y + 543}</span></div>

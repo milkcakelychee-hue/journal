@@ -667,7 +667,8 @@ button.ea-date { border: 0; margin: 0; font-family: inherit; text-align: left; }
 .sl-frame.ph-big { margin: 6px auto 16px; }
 .ph-change + .ph-change { margin-top: 8px; }
 .ph-change { margin-top: 10px; width: 100%; height: 40px; border: 0; border-radius: 10px; background: var(--gray-soft); padding: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; font-size: 14px; font-weight: 500; color: var(--ink); }
-.ph-note { margin-top: 12px; font-size: 15px; line-height: 22px; overflow-wrap: anywhere; }
+.ph-note { position: relative; margin-top: 10px; border-radius: 12px; background: var(--gray-soft); padding: 12px 44px 12px 14px; min-height: 22px; font-size: 15px; line-height: 22px; overflow-wrap: anywhere; }
+.ph-pen { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; border: 0; border-radius: 16px; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; padding: 0; }
 .pa-img { height: 300px; border-radius: 12px; position: relative; overflow: hidden; background: #E6E6EA; }
 .pa-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pa-x { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; border-radius: 16px; background: rgba(0,0,0,0.45); color: #fff; padding: 0; display: flex; align-items: center; justify-content: center; }
@@ -819,3 +820,21 @@ button.ea-date { border: 0; margin: 0; font-family: inherit; text-align: left; }
 .ob-fi { width: 40px; height: 40px; border-radius: 12px; background: var(--gray-soft); display: flex; align-items: center; justify-content: center; flex: none; }
 .ob-ft { display: block; font-size: 16px; font-weight: 500; }
 .ob-fs { display: block; font-size: 13px; line-height: 19px; color: var(--muted); }
+
+/* วันหยุด · ลายเส้นแดงจาง + ป้ายแดง */
+.hol-bg { background-color: #fff; background-image: repeating-linear-gradient(45deg, rgba(226,75,74,0.16) 0 1px, transparent 1px 7px); }
+.hol-tag { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; border: 0; border-radius: 8px; background: #FCEBEB; color: #A32D2D; padding: 4px 10px; font-family: inherit; font-size: 13px; font-weight: 500; line-height: 18px; }
+.mo-chip.hol { background: #FCEBEB; color: #A32D2D; }
+.hol-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 4px 16px; }
+.hol-add { height: 26px; border: 0; border-radius: 8px; background: var(--gray-soft); padding: 0 10px; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--ink); }
+.hd-cal { background: var(--gray-soft); border-radius: 14px; padding: 4px 8px 8px; }
+.hd-nav { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-head); font-size: 15px; font-weight: 500; }
+.hd-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.hd-h { text-align: center; font-size: 12px; color: var(--muted); line-height: 24px; }
+.hd-d { height: 38px; border: 0; border-radius: 8px; background: #fff; font-family: inherit; font-size: 14px; color: var(--ink); padding: 0; }
+.hd-d.today { font-weight: 600; }
+.hd-d.on { background-color: #fff; background-image: repeating-linear-gradient(45deg, rgba(226,75,74,0.22) 0 1px, transparent 1px 6px); box-shadow: inset 0 0 0 1.5px #E24B4A; color: #A32D2D; font-weight: 600; }
+.hd-cnt { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.hd-cnt.err { color: #A32D2D; }
+.mo-acts { display: flex; align-items: center; gap: 8px; }
+.mo-acts .hol-add { height: 32px; border-radius: 16px; padding: 0 12px; }

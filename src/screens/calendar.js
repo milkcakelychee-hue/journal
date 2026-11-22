@@ -8,6 +8,7 @@ import { nextOccurrence, impNoteHtml, IMP_DOT, IMP_TEXT, NOTE_COLORS } from '../
 import { eventsOn } from './events-today.js';
 import { openEventSheet } from './event-sheet.js';
 import { catOf } from '../lib/categories.js';
+import { openHolidaySheet, holidaysOn } from './holiday-sheet.js';
 
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>'), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>');
@@ -70,6 +71,13 @@ const PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const CHIP_ROWS = 2; // ชิปต่อช่องวันก่อนขึ้น +n
 
+// ช่วงวันของวันหยุดในเดือนนั้น เช่น "26–28 ธ.ค." หรือ "5, 10 ธ.ค."
+function holRange(h, y, m) {
+  const ns = h.dates.map(fromKey).filter(x => x.getFullYear() === y && x.getMonth() === m).map(x => x.getDate());
+  const parts = []; let a = ns[0], p = ns[0];
+  for (const n of ns.slice(1).concat(null)) { if (n === p + 1) { p = n; continue; } parts.push(a === p ? `${a}` : `${a}–${p}`); a = p = n; }
+  return `${parts.join(', ')} ${MONTHS_SHORT[m]}`;
+}
 function monthView(d) {
   const { y, m } = st.month;
   const ws = d.settings.weekStart;
@@ -104,7 +112,9 @@ function monthView(d) {
       const imp = importantOn(d, k);
       const single = eventsOn(d, k).filter(e => !e.endDate || e.endDate === e.startDate);
       const hasNote = d.quickNotes.some(n => n.date === k);
+      const hol = holidaysOn(d, k);
       const chips = [
+        ...hol.map(h => `<span class="mo-chip hol">${esc(h.name)}</span>`),
         ...imp.map(x => `<span class="mo-chip imp" style="background:${(NOTE_COLORS[x.noteColor] || NOTE_COLORS.yellow)[1]};color:${IMP_TEXT[x.noteColor] || IMP_TEXT.yellow}">${esc(x.title)}</span>`),
         ...single.map(e => { const c = cat(e.categoryId); return `<span class="mo-chip" style="background:${c.bg};color:${c.fg}">${esc(e.title)}</span>`; }),
         ...(hasNote ? ['<span class="mo-chip note">โน้ต</span>'] : []),
@@ -115,7 +125,7 @@ function monthView(d) {
       const shown = chips.slice(0, room);
       const more = chips.length - shown.length + Math.max(0, hiddenBars);
       const cls = k === st.sel ? 'sel' : k === tk ? 'today' : '';
-      cells += `<button type="button" class="mo-cell${br}" aria-label="${day.getDate()} ${MONTHS[m]}${imp[0] ? ` · วันสำคัญ ${esc(imp[0].title)}` : ''}"${k === tk ? ' aria-current="date"' : ''} data-cal-pick="${k}">
+      cells += `<button type="button" class="mo-cell${br}${hol.length ? ' hol-bg' : ''}" aria-label="${day.getDate()} ${MONTHS[m]}${hol[0] ? ` · วันหยุด ${esc(hol[0].name)}` : ''}${imp[0] ? ` · วันสำคัญ ${esc(imp[0].title)}` : ''}"${k === tk ? ' aria-current="date"' : ''} data-cal-pick="${k}">
         ${imp[0] ? `<span class="cal-imp mo-imp" style="background:${impDot(imp[0])}"></span>` : ''}
         <span class="mo-num ${cls}">${day.getDate()}</span>
         <span class="mo-chips">${'<span class="mo-chip spacer"></span>'.repeat(used)}${shown.join('')}${more > 0 ? `<span class="mo-more">+${more}</span>` : ''}</span></button>`;
@@ -129,14 +139,19 @@ function monthView(d) {
   const sel = fromKey(st.sel);
   const imps = importantOn(d, st.sel);
   const t0 = fromKey(tk);
+  const ym = `${y}-${String(m + 1).padStart(2, '0')}`;
+  const monthHols = (d.holidays || []).filter(h => h.dates.some(x => x.startsWith(ym)));
+  const selHols = holidaysOn(d, st.sel);
   return `<div class="cal-nav"><button type="button" class="cal-arrow" aria-label="ก่อนหน้า" data-cal-month="-1">${L}</button>
       <div class="cal-range">${MONTHS[m]} <span style="color:var(--muted)">${be(y)}</span></div>
       <button type="button" class="cal-arrow" aria-label="ถัดไป" data-cal-month="1">${R}</button></div></div>
     <div class="mo card"><div class="mo-head">${heads}</div>${rows}</div>
+    ${monthHols.length ? `<div class="hol-row">${monthHols.map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)} ${holRange(h, y, m)}</button>`).join('')}</div>` : ''}
     <div>
       <div class="mo-panelhead"><h2 class="h-sec">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2>
-        <button type="button" class="mo-add" aria-label="เพิ่มกิจกรรมวันนี้" data-event-add>${PLUS}</button></div>
+        <span class="mo-acts"><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button><button type="button" class="mo-add" aria-label="เพิ่มกิจกรรมวันนี้" data-event-add>${PLUS}</button></span></div>
       <div class="mo-panel">
+        ${selHols.length ? `<div class="hol-row" style="margin:0 0 12px">${selHols.map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)}</button>`).join('')}</div>` : ''}
         ${imps.length ? `<div class="mo-imps">${imps.map((x, i) => impNoteHtml(x, Math.round((sel - t0) / 864e5), i, sel)).join('')}</div>` : ''}
         ${eventsListHtml(d, st.sel)}
       </div>
@@ -188,6 +203,8 @@ export function renderCalendar() {
 export function mountCalendar(root, rerenderPage) {
   bindTodo(root, () => { root.querySelector('#todo-slot').innerHTML = renderTodoCard(); });
   root.addEventListener('click', e => {
+    const ho = e.target.closest('[data-hol-add],[data-hol-open]');
+    if (ho) { openHolidaySheet(rerenderPage, ho.dataset.holOpen ? { id: ho.dataset.holOpen } : { date: st.sel }); return; }
     const ea = e.target.closest('[data-event-add],[data-event-open]');
     if (ea) { openEventSheet(ea.dataset.eventOpen ? { id: ea.dataset.eventOpen } : { date: st.sel }, rerenderPage); return; }
     const b = e.target.closest('[data-cal-view],[data-cal-step],[data-cal-pick],[data-qn-edit],[data-cal-month],[data-cal-year],[data-cal-ym]');

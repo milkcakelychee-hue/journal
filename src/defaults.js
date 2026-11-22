@@ -49,6 +49,7 @@ export function createDefaultData() {
     quickNotes: [],            // { id, date, time, text }
     habits: [],                // { id, name, type:'build'|'quit', freq:{kind:'daily'|'alt'|'custom', days[]}, color, startDate }
     habitLog: {},              // { habitId: { 'YYYY-MM-DD': true } }
+    holidays: [],              // { id, name, dates: [YYYY-MM-DD] } วันหยุด (บลูขอ 22 พ.ย. 2569)
     importantDates: [],        // { id, title, date, yearly, noteColor }
     periodLog: [],             // { id, date, flow:'h'|'m'|'l', cramps, ended }
     vitamins: [],              // { id, name, dose, timeSlot, freq }
