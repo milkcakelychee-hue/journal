@@ -32,6 +32,7 @@ export function createDefaultData() {
     schema: SCHEMA_VERSION,
     settings: {
       name: '',
+      noteColorNames: {},       // ความหมายของสีโน้ตวันสำคัญ { yellow: 'วันเกิด', ... } ว่าง = ชื่อสี
       weekStart: 1,            // 0 = อาทิตย์, 1 = จันทร์
       importantDaysAhead: 7,
       periodDefaultLen: 5,

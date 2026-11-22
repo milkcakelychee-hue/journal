@@ -51,7 +51,7 @@ function weekStrip(d, days) {
     return `<button type="button" class="wk-day cal-day${sel ? ' today' : ''}${today && !sel ? ' is-today' : ''}${hol ? ' hol-bg' : ''}" aria-pressed="${sel}"${today ? ' aria-current="date"' : ''}
       aria-label="${DAYS_SHORT[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}${hol ? ` · วันหยุด ${esc(hol.name)}` : ''}${imp ? ` · วันสำคัญ ${imp.title}` : ''}" data-cal-pick="${k}">
       ${imp ? `<span class="cal-imp" style="background:${impDot(imp)}"></span>` : ''}
-      <span class="wk-dn">${DAYS_SHORT[day.getDay()]}</span><span class="wk-num">${day.getDate()}</span><span class="wk-dot" style="background:${dot}"></span></button>`;
+      <span class="wk-dn">${DAYS_SHORT[day.getDay()]}</span><span class="wk-num${day.getDay() % 6 === 0 && !sel ? ' we' : ''}">${day.getDate()}</span><span class="wk-dot" style="background:${dot}"></span></button>`;
   }).join('')}</div></section>`;
 }
 const impDot = x => IMP_DOT[x.noteColor] || IMP_DOT.yellow;
@@ -89,13 +89,23 @@ function monthView(d) {
   const tk = todayKey();
   const cat = id => catOf(d, id);
   const heads = Array.from({ length: 7 }, (_, i) => `<div class="mo-dn">${DAYS_SHORT[(ws + i) % 7]}</div>`).join('');
+  // วันหยุดที่ติดกันหลายวัน → แถบเดียวแบบกิจกรรมหลายวัน (บลูขอ 22 พ.ย. 2569)
+  const holRuns = [];
+  for (const h of d.holidays || []) {
+    const ks = [...h.dates].sort(); let a = 0;
+    for (let i = 1; i <= ks.length; i++) {
+      if (i < ks.length && toKey(addDays(fromKey(ks[i - 1]), 1)) === ks[i]) continue;
+      holRuns.push({ hol: true, id: h.id, title: h.name, startDate: ks[a], endDate: ks[i - 1] }); a = i;
+    }
+  }
+  const holMulti = holRuns.filter(r => r.endDate !== r.startDate);
   let rows = '';
   for (let w = 0; w < weeks; w++) {
     const days = Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + i));
     const keys = days.map(toKey);
     // กิจกรรมหลายวัน → แถบข้ามช่อง จัดเลน (สูงสุด CHIP_ROWS เลน)
-    const multi = d.events.filter(e => e.endDate && e.endDate !== e.startDate && e.startDate <= keys[6] && e.endDate >= keys[0])
-      .sort((a, b) => a.startDate < b.startDate ? -1 : 1);
+    const multi = [...holMulti, ...d.events.filter(e => e.endDate && e.endDate !== e.startDate)].filter(e => e.startDate <= keys[6] && e.endDate >= keys[0])
+      .sort((a, b) => (b.hol ? 1 : 0) - (a.hol ? 1 : 0) || (a.startDate < b.startDate ? -1 : 1));
     const lanes = []; const bars = []; const laneUse = Array.from({ length: 7 }, () => 0);
     for (const e of multi) {
       const s0 = Math.max(0, keys.findIndex(k => k >= e.startDate)), e0 = keys.findLastIndex(k => k <= e.endDate);
@@ -115,8 +125,8 @@ function monthView(d) {
       const hasNote = d.quickNotes.some(n => n.date === k);
       const hol = holidaysOn(d, k);
       const chips = [
-        ...hol.map(h => `<span class="mo-chip hol">${esc(h.name)}</span>`),
-        ...imp.map(x => `<span class="mo-chip imp" style="background:${(NOTE_COLORS[x.noteColor] || NOTE_COLORS.yellow)[1]};color:${IMP_TEXT[x.noteColor] || IMP_TEXT.yellow}">${esc(x.title)}</span>`),
+        ...hol.filter(h => !holMulti.some(r => r.id === h.id && r.startDate <= k && k <= r.endDate)).map(h => `<span class="mo-chip hol">${esc(h.name)}</span>`),
+        // วันสำคัญ: แสดงแค่จุดมุมช่อง ไม่แสดงชื่อ (บลูขอ 22 พ.ย. 2569 · สีโน้ตอาจซ้ำกับหมวดกิจกรรม)
         ...single.map(e => { const c = cat(e.categoryId); return `<span class="mo-chip" style="background:${c.bg};color:${c.fg}">${esc(e.title)}</span>`; }),
         ...(hasNote ? ['<span class="mo-chip note">โน้ต</span>'] : []),
       ];
@@ -128,11 +138,11 @@ function monthView(d) {
       const cls = k === st.sel ? 'sel' : k === tk ? 'today' : '';
       cells += `<button type="button" class="mo-cell${br}${hol.length ? ' hol-bg' : ''}" aria-label="${day.getDate()} ${MONTHS[m]}${hol[0] ? ` · วันหยุด ${esc(hol[0].name)}` : ''}${imp[0] ? ` · วันสำคัญ ${esc(imp[0].title)}` : ''}"${k === tk ? ' aria-current="date"' : ''} data-cal-pick="${k}">
         ${imp[0] ? `<span class="cal-imp mo-imp" style="background:${impDot(imp[0])}"></span>` : ''}
-        <span class="mo-num ${cls}">${day.getDate()}</span>
+        <span class="mo-num ${cls}${day.getDay() % 6 === 0 ? ' we' : ''}">${day.getDate()}</span>
         <span class="mo-chips">${'<span class="mo-chip spacer"></span>'.repeat(used)}${shown.join('')}${more > 0 ? `<span class="mo-more">+${more}</span>` : ''}</span></button>`;
     });
     const barHtml = bars.map(({ e, s0, e0, lane }) => {
-      const c = cat(e.categoryId);
+      const c = e.hol ? { bg: '#FCEBEB', fg: '#A32D2D' } : cat(e.categoryId);
       return `<div class="mo-bar" style="top:${32 + lane * 16}px;left:calc(${(s0 / 7 * 100).toFixed(4)}% + 3px);width:calc(${((e0 - s0 + 1) / 7 * 100).toFixed(4)}% - 6px);background:${c.bg};color:${c.fg}">${esc(e.title)}</div>`;
     }).join('');
     rows += `<div class="mo-week">${cells}${barHtml}</div>`;
