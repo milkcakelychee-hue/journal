@@ -9,13 +9,13 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
+# แยก build กับ deploy เป็น 2 job (แบบ starter workflow ของ GitHub)
+# เดิมรวม job เดียว: deploy-pages ถามหา artifact ทันทีหลังอัปโหลด ~0.3 วินาที
+# บางครั้ง API ยังไม่เห็น → "No artifacts named github-pages" · แยก job ให้มีช่วงรอระหว่างกัน
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,5 +28,12 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
