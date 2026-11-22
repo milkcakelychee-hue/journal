@@ -8,6 +8,7 @@ import { nextOccurrence, impNoteHtml, IMP_DOT, IMP_TEXT, NOTE_COLORS } from '../
 import { eventsOn } from './events-today.js';
 import { openEventSheet } from './event-sheet.js';
 import { catOf } from '../lib/categories.js';
+import { openImpSheet } from './imp-sheet.js';
 import { openHolidaySheet, openWfhSheet, holidaysOn, isWfh } from './holiday-sheet.js';
 
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -61,7 +62,8 @@ function weekView(d) {
   const sel = fromKey(st.sel);
   return `${weekHeader(days)}</div>
     ${weekStrip(d, days)}
-    <div class="mo-panelhead cal-dayhead"><h2 class="h-sec">${DAYS_SHORT[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2><span class="mo-acts"><button type="button" class="hol-add" data-wfh-add>+ WFH</button><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button></span></div>
+    <div class="mo-panelhead cal-dayhead"><h2 class="h-sec">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2></div>
+    ${ADD_ROW}
     ${tagRow(d, st.sel, 'margin:0 4px 12px')}
     <div id="todo-slot">${renderTodoCard()}</div>
     ${renderEventsSection({ key: st.sel, title: 'กิจกรรม', empty: 'ยังไม่มีกิจกรรม', after: renderQuickNotesToday(st.sel) })}`;
@@ -79,6 +81,8 @@ export function tagRow(d, k, style) {
   if (isWfh(d, k)) tags.push(`<button type="button" class="hol-tag wfh-tag" data-wfh-add>WFH</button>`);
   return tags.length ? `<div class="hol-row" style="${style}">${tags.join('')}</div>` : '';
 }
+// แถวปุ่มเพิ่มของวันที่เลือก: WFH · วันหยุด · วันสำคัญ (ใช้แผ่นเดียวกับหน้าวันสำคัญ ข้อมูลชุดเดียวกัน)
+const ADD_ROW = '<div class="add-row"><button type="button" class="hol-add" data-wfh-add>+ WFH</button><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button><button type="button" class="hol-add" data-imp-add>+ วันสำคัญ</button></div>';
 function holRange(h, y, m) {
   const ns = h.dates.map(fromKey).filter(x => x.getFullYear() === y && x.getMonth() === m).map(x => x.getDate());
   const parts = []; let a = ns[0], p = ns[0];
@@ -173,8 +177,9 @@ function monthView(d) {
     <div class="mo card"><div class="mo-head">${heads}</div>${rows}</div>
     ${monthHols.length ? `<div class="hol-row">${monthHols.map(h => `<button type="button" class="hol-tag" data-hol-open="${h.id}">วันหยุด · ${esc(h.name)} ${holRange(h, y, m)}</button>`).join('')}</div>` : ''}
     <div>
-      <div class="mo-panelhead"><h2 class="h-sec">${DAYS_SHORT[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2>
-        <span class="mo-acts"><button type="button" class="hol-add" data-wfh-add>+ WFH</button><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button><button type="button" class="mo-add" aria-label="เพิ่มกิจกรรมวันนี้" data-event-add>${PLUS}</button></span></div>
+      <div class="mo-panelhead"><h2 class="h-sec">${DAYS[sel.getDay()]} ${sel.getDate()} ${MONTHS[sel.getMonth()]}</h2>
+        <button type="button" class="mo-add" aria-label="เพิ่มกิจกรรมวันนี้" data-event-add>${PLUS}</button></div>
+      ${ADD_ROW}
       <div class="mo-panel">
         ${tagRow(d, st.sel, 'margin:0 0 12px')}
         ${imps.length ? `<div class="mo-imps">${imps.map((x, i) => impNoteHtml(x, Math.round((sel - t0) / 864e5), i, sel)).join('')}</div>` : ''}
@@ -229,6 +234,7 @@ export function mountCalendar(root, rerenderPage) {
   bindTodo(root, () => { root.querySelector('#todo-slot').innerHTML = renderTodoCard(); });
   root.addEventListener('click', e => {
     const ho = e.target.closest('[data-hol-add],[data-hol-open]');
+    if (e.target.closest('[data-imp-add]')) { openImpSheet(rerenderPage, null, st.sel); return; }
     if (e.target.closest('[data-wfh-add]')) { openWfhSheet(rerenderPage, st.sel); return; }
     if (ho) { openHolidaySheet(rerenderPage, ho.dataset.holOpen ? { id: ho.dataset.holOpen } : { date: st.sel }); return; }
     const ea = e.target.closest('[data-event-add],[data-event-open]');

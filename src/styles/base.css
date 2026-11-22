@@ -859,3 +859,5 @@ button.ea-date { border: 0; margin: 0; font-family: inherit; text-align: left; }
 .mo-acts { flex: none; gap: 6px; }
 .hol-add { white-space: nowrap; }
 .mo-panelhead .mo-acts .hol-add { padding: 0 10px; }
+.add-row { display: flex; gap: 6px; margin: 6px 4px 12px; overflow-x: auto; scrollbar-width: none; }
+.add-row .hol-add { height: 32px; border-radius: 16px; padding: 0 12px; flex: none; }

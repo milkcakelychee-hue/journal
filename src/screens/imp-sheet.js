@@ -13,9 +13,9 @@ const PEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke=
 const cname = k => getData().settings.noteColorNames?.[k] || CNAME[k];
 const dLabel = k => { const d = fromKey(k); return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`; };
 
-export function openImpSheet(onSaved, id) {
+export function openImpSheet(onSaved, id, date) {
   const old = id ? getData().importantDates.find(x => x.id === id) : null;
-  const f = old ? { title: old.title, date: old.date, yearly: !!old.yearly, noteColor: old.noteColor || 'yellow' } : { title: '', date: todayKey(), yearly: false, noteColor: 'yellow' };
+  const f = old ? { title: old.title, date: old.date, yearly: !!old.yearly, noteColor: old.noteColor || 'yellow' } : { title: '', date: date || todayKey(), yearly: false, noteColor: 'yellow' };
   let view = 'form', names = {};
   const namesPage = () => `<div class="im-names">${Object.entries(NOTE_COLORS).map(([k, [a, b]]) => `<label class="im-nrow"><span class="im-nsw" style="background:linear-gradient(180deg,${a},${b})"></span><input type="text" class="ea-input" maxlength="20" aria-label="ความหมายของสี${CNAME[k]}" placeholder="${CNAME[k]}" value="${esc(names[k] || '')}" data-im-name="${k}"></label>`).join('')}</div>
     <div class="pa-hint" style="margin-top:10px">ตั้งว่าแต่ละสีหมายถึงอะไร เช่น วันเกิด เดดไลน์</div>

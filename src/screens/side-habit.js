@@ -77,9 +77,9 @@ function card(d, h) {
   return `<div class="hb-card" data-hb-edit="${h.id}">
     <div class="hb-l"><span class="hb-st" style="color:${c}">${FLAME(c)}${quit ? `เลิกได้แล้ว ${s} วัน` : `ติดต่อกัน ${s} ${unit}`}</span>
       <span class="hb-name">${esc(h.name)}</span><span class="hb-fq">${freqLabel(h, y, m)}</span>
-      <span class="hb-cnt">${quit ? 'ไม่ได้ทำ' : 'ทำแล้ว'} ${ok}/${due} วัน · ${MONTHS_SHORT[m]}</span></div>
+      <span class="hb-cnt">${quit ? 'เลิกได้แล้ว' : 'ทำแล้ว'} ${ok}/${due} วัน · ${MONTHS_SHORT[m]}</span></div>
     <div class="hb-r">${todayDue ? `<button type="button" class="hb-chk" role="checkbox" aria-checked="${todayDone}" aria-label="${esc(h.name)} ${lab}" data-hb-toggle="${h.id}">${todayDone ? `<span class="on" style="background:${c}">${CHECK}</span>` : '<span></span>'}</button>` : '<span class="hb-chk-sp"></span>'}
-      <div class="hb-grid" role="img" aria-label="${quit ? 'ไม่ได้ทำ' : 'ทำแล้ว'} ${ok}/${due} วัน เดือน${MONTHS[m]}">${cells}</div></div>
+      <div class="hb-grid" role="img" aria-label="${quit ? 'เลิกได้แล้ว' : 'ทำแล้ว'} ${ok}/${due} วัน เดือน${MONTHS[m]}">${cells}</div></div>
   </div>`;
 }
 
@@ -107,7 +107,7 @@ function yearCard(d, h) {
     cols += `<span class="hy-col">${col}</span>`;
   }
   if (weekly(h)) due = Array.from({ length: 12 }, (_, m) => monthTarget(h, y, m)).reduce((a, b) => a + b, 0);
-  const quit = h.type === 'quit', txt = quit ? `ไม่ได้ทำ ${ok}/${due} วัน` : `ทำแล้ว ${ok}/${due} ครั้ง`;
+  const quit = h.type === 'quit', txt = quit ? `เลิกได้แล้ว ${ok}/${due} วัน` : `ทำแล้ว ${ok}/${due} ครั้ง`;
   const todayDue = isDue(h, tk), todayDone = done(d, h, tk);
   return `<div class="hy-card" data-hb-edit="${h.id}">
     <div class="hy-top"><span class="hy-l"><span class="hy-name">${esc(h.name)}</span><span class="hy-cnt">${txt} · ปีนี้</span></span>
