@@ -15,8 +15,8 @@ const WEEK = [1, 2, 3, 4, 5, 6, 0]; // จ → อา ตามบอร์ด
 
 export function openHabitSheet(onSaved, id) {
   const old = id ? getData().habits.find(h => h.id === id) : null;
-  const f = old ? { type: old.type || 'build', name: old.name, color: old.color, kind: old.freq?.kind || 'daily', days: [...(old.freq?.days || [])], per: old.freq?.per || 3 }
-    : { type: 'build', name: '', color: '#6C9BD1', kind: 'daily', days: [], per: 3 };
+  const f = old ? { type: old.type || 'build', name: old.name, color: old.color, kind: old.freq?.kind || 'daily', days: [...(old.freq?.days || [])], per: old.freq?.per || 3, notes: old.notes ?? Object.keys(getData().habitNotes?.[old.id] || {}).length > 0 }
+    : { type: 'build', name: '', color: '#6C9BD1', kind: 'daily', days: [], per: 3, notes: false };
   const seg = (key, val, label) => `<button type="button" class="seg-btn${f[key] === val ? ' on' : ''}" aria-pressed="${f[key] === val}" data-hn-${key}="${val}">${label}</button>`;
   const body = () => `<div class="hn">
       <div><div class="ea-lab">ประเภท</div><div class="seg hn-seg">${seg('type', 'build', 'นิสัยที่อยากสร้าง')}${seg('type', 'quit', 'นิสัยที่อยากเลิก')}</div></div>
@@ -28,6 +28,8 @@ export function openHabitSheet(onSaved, id) {
         <label class="ps-num"><input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="สัปดาห์ละกี่วัน" value="${f.per}" data-hn-perin><span>วัน</span></label>
         <button type="button" class="ps-btn" aria-label="เพิ่ม" data-hn-per="1">${PLUS}</button></span></div>
         <div class="hd-cnt" data-hn-month>${perMonth(f.per)}</div></div>` : ''}
+      <div class="ea-sw-row"><div><div class="ea-sw-t">โน้ตรายวัน</div><div class="ea-sw-s">มีปุ่มจดโน้ตสั้น ๆ และสรุปโน้ตในหน้าปี</div></div>
+        <button type="button" role="switch" aria-checked="${f.notes}" aria-label="โน้ตรายวัน" class="ea-sw${f.notes ? ' on' : ''}" data-hn-notes><span></span></button></div>
       ${f.kind === 'custom' ? `<div><div class="ea-lab">เลือกวัน</div><div class="hn-days">${WEEK.map(i => `<button type="button" class="hn-day${f.days.includes(i) ? ' on' : ''}" aria-pressed="${f.days.includes(i)}" data-hn-day="${i}">${DAYS_SHORT[i]}</button>`).join('')}</div></div>` : ''}
     </div>
     <div class="${old ? 'btn-row' : ''}" style="margin-top:20px">${old ? '<button type="button" class="btn-secondary" data-hn-del>ลบ</button>' : ''}<button type="button" class="btn-primary" data-hn-save>บันทึก</button></div>`;
@@ -42,23 +44,24 @@ export function openHabitSheet(onSaved, id) {
       el.addEventListener('click', async e => {
         const pb = e.target.closest('[data-hn-per]');
         if (pb) { f.per = clampPer(f.per + Number(pb.dataset.hnPer)); el.querySelector('[data-hn-perin]').value = f.per; el.querySelector('[data-hn-month]').textContent = perMonth(f.per); return; }
-        const b = e.target.closest('[data-hn-type],[data-hn-kind],[data-hn-color],[data-hn-day],[data-hn-save],[data-hn-del]');
+        const b = e.target.closest('[data-hn-type],[data-hn-notes],[data-hn-kind],[data-hn-color],[data-hn-day],[data-hn-save],[data-hn-del]');
         if (!b) return;
         const ds = b.dataset;
-        if (ds.hnType) f.type = ds.hnType;
+        if (ds.hnNotes !== undefined) f.notes = !f.notes;
+        else if (ds.hnType) f.type = ds.hnType;
         else if (ds.hnKind) f.kind = ds.hnKind;
         else if (ds.hnColor) f.color = ds.hnColor;
         else if (ds.hnDay) { const i = Number(ds.hnDay); f.days = f.days.includes(i) ? f.days.filter(x => x !== i) : [...f.days, i]; }
         else if (ds.hnDel !== undefined) {
           if (!await confirmDelete({ title: `ลบ "${old.name}"?` })) return;
-          update(d => { d.habits = d.habits.filter(h => h.id !== old.id); delete d.habitLog[old.id]; });
+          update(d => { d.habits = d.habits.filter(h => h.id !== old.id); delete d.habitLog[old.id]; if (d.habitNotes) delete d.habitNotes[old.id]; });
           close(); onSaved?.(); return;
         }
         else {
           const name = f.name.trim();
           if (!name) { el.querySelector('[data-hn-name]').focus(); return; }
           if (f.kind === 'custom' && !f.days.length) return; // ต้องเลือกอย่างน้อย 1 วัน
-          const rec = { name, type: f.type, freq: { kind: f.kind, days: f.kind === 'custom' ? f.days : [], ...(f.kind === 'weekly' ? { per: f.per } : {}) }, color: f.color };
+          const rec = { name, type: f.type, freq: { kind: f.kind, days: f.kind === 'custom' ? f.days : [], ...(f.kind === 'weekly' ? { per: f.per } : {}) }, color: f.color, notes: f.notes };
           update(d => { if (old) Object.assign(d.habits.find(h => h.id === old.id), rec); else d.habits.push({ id: newId(), ...rec, startDate: todayKey() }); });
           close(); onSaved?.(); return;
         }

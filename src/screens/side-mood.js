@@ -1,6 +1,8 @@
 // แยกด้าน · อารมณ์ · มุมมองเดือน (Side-Mood) ส่วนบน: ปฏิทินย่อ + สรุปเดือนนี้
 // + โหลความรู้สึก / รายสัปดาห์ / วันในสัปดาห์ · มุมมองปี (Side-MoodYear)
-import { getData } from '../store.js';
+import { getData, update } from '../store.js';
+import { openSheet } from '../ui/sheet.js';
+import { confirmDelete } from '../ui/confirm.js';
 import { DAYS_SHORT, MONTHS, MONTHS_SHORT, toKey, todayKey, fromKey } from '../lib/date-th.js';
 import { ball, tint } from '../lib/mood.js';
 
@@ -40,7 +42,9 @@ function calendar(d) {
     const inner = mood ? `<span class="smc-ball" style="background:${ball(mood.color)}">${i}</span>`
       : k < tk ? `<span class="smc-miss">${i}</span>`
       : k === tk ? `<span class="smc-miss">${i}</span>` : `<span class="smc-fut">${i}</span>`;
-    cells += `<div class="smc-day" aria-label="${i} ${MONTHS[m]}${mood ? ` ${esc(mood.name)}` : ''}"${k === tk ? ' aria-current="date"' : ''}><span class="smc-wrap${k === tk ? ' today' : ''}">${inner}</span></div>`;
+    // วันนี้และวันที่ผ่านมา แตะเพื่อจด/แก้อารมณ์ย้อนหลังได้ (บลูขอ 23 พ.ย. 2569)
+    cells += k <= tk ? `<button type="button" class="smc-day" aria-label="${i} ${MONTHS[m]}${mood ? ` ${esc(mood.name)}` : ' ยังไม่บันทึก'}"${k === tk ? ' aria-current="date"' : ''} data-sm-day="${k}"><span class="smc-wrap${k === tk ? ' today' : ''}">${inner}</span></button>`
+      : `<div class="smc-day"><span class="smc-wrap">${inner}</span></div>`;
   }
   return `<section class="card smc">${cells}</section>`;
 }
@@ -197,11 +201,42 @@ export function renderSideMood() {
 
 export function mountSideMood(root, rerender) {
   root.addEventListener('click', e => {
+    const dy = e.target.closest('[data-sm-day]');
+    if (dy) { openMoodDay(dy.dataset.smDay, rerender); return; }
     const b = e.target.closest('[data-sm-view],[data-sm-month],[data-sm-year]');
     if (!b) return;
     if (b.dataset.smView) st.view = b.dataset.smView;
     else if (b.dataset.smYear) st.y += Number(b.dataset.smYear);
     else { const n = st.m + Number(b.dataset.smMonth); st.y += Math.floor(n / 12); st.m = (n + 12) % 12; }
     rerender();
+  });
+}
+
+// จด/แก้อารมณ์ของวันใดก็ได้ (ไม่เกินวันนี้) · เลือกอารมณ์ + โน้ตสั้น ๆ · ลบได้ (มีป๊อปอัป)
+function openMoodDay(k, onSaved) {
+  const d0 = getData(), old = d0.moodLog[k], dt = fromKey(k);
+  const f = { pick: old?.moodId || null, note: old?.note || '' };
+  const moods = [...d0.moods].sort((a, b) => a.order - b.order);
+  const body = () => `<div class="md-grid">${moods.map(m => { const on = m.id === f.pick, dim = f.pick && !on;
+      return `<button type="button" class="md-btn${on ? ' on' : ''}" aria-pressed="${on}" aria-label="${esc(m.name)}" data-md-pick="${m.id}"${on ? ` style="background:${m.color}2E"` : ''}><span class="md-ball" style="background:${ball(m.color)};opacity:${dim ? 0.5 : 1}"></span><span class="md-name">${esc(m.name)}</span></button>`; }).join('')}</div>
+    <label class="pa-note"><span class="pa-nl">โน้ตสั้น ๆ</span><textarea maxlength="100" rows="2" aria-label="โน้ตสั้น ๆ" data-md-note>${esc(f.note)}</textarea><span class="pa-cnt" data-md-cnt>${f.note.length}/100</span></label>
+    <div class="${old ? 'btn-row' : ''}" style="margin-top:16px">${old ? '<button type="button" class="btn-secondary" data-md-del>ลบ</button>' : ''}<button type="button" class="btn-primary" data-md-save>บันทึก</button></div>`;
+  openSheet({
+    title: `อารมณ์ · ${DAYS_SHORT[dt.getDay()]} ${dt.getDate()} ${MONTHS_SHORT[dt.getMonth()]}`, body,
+    mount(el, close, render) {
+      el.addEventListener('input', e => { if (e.target.matches('[data-md-note]')) { f.note = e.target.value.slice(0, 100); el.querySelector('[data-md-cnt]').textContent = `${f.note.length}/100`; } });
+      el.addEventListener('click', async e => {
+        const p = e.target.closest('[data-md-pick]');
+        if (p) { f.pick = p.dataset.mdPick; render(); return; }
+        if (e.target.closest('[data-md-del]')) {
+          if (!await confirmDelete({ title: `ลบอารมณ์วันที่ ${dt.getDate()} ${MONTHS_SHORT[dt.getMonth()]}?` })) return;
+          update(dd => { delete dd.moodLog[k]; }); close(); onSaved?.(); return;
+        }
+        if (e.target.closest('[data-md-save]')) {
+          if (!f.pick) return;
+          update(dd => { dd.moodLog[k] = { moodId: f.pick, note: f.note.trim() }; }); close(); onSaved?.();
+        }
+      });
+    },
   });
 }

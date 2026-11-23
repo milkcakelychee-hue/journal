@@ -4,6 +4,7 @@ import { getData, update } from '../store.js';
 import { DAYS_SHORT, MONTHS, MONTHS_SHORT, toKey, fromKey, todayKey, addDays } from '../lib/date-th.js';
 import { tint } from '../lib/mood.js';
 import { openHabitSheet } from './habit-sheet.js';
+import { openSheet } from '../ui/sheet.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -28,6 +29,30 @@ export function isDue(h, k) {
   return true;
 }
 const done = (d, h, k) => !!d.habitLog[h.id]?.[k];
+const noteOf = (d, h, k) => d.habitNotes?.[h.id]?.[k] || '';
+// เปิดโน้ตรายวันไว้ไหม (ตั้งตอนสร้าง/แก้ Habit) · ของเก่าที่ยังไม่ได้ตั้ง = เปิดถ้าเคยจดโน้ตแล้ว
+export const hasNotes = (d, h) => h.notes ?? Object.keys(d.habitNotes?.[h.id] || {}).length > 0;
+const NOTE_IC = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4 H15 L19 8 V20 H5 Z"/><path d="M9 12 H15"/><path d="M9 16 H13"/></svg>';
+
+// โน้ตสั้น ๆ ของวันนี้ (100 ตัวอักษร) · ลบข้อความจนว่าง = ไม่มีโน้ต
+function openHabitNote(id, onSaved) {
+  const h = getData().habits.find(x => x.id === id); if (!h) return;
+  const k = todayKey(), dt = fromKey(k);
+  let note = noteOf(getData(), h, k);
+  openSheet({
+    title: `โน้ตวันนี้ · ${DAYS_SHORT[dt.getDay()]} ${dt.getDate()} ${MONTHS_SHORT[dt.getMonth()]}`,
+    body: () => `<div class="hb-ns">${esc(h.name)}</div><label class="pa-note" style="margin-top:8px"><span class="pa-nl">โน้ตสั้น ๆ</span><textarea maxlength="100" rows="3" aria-label="โน้ตสั้น ๆ" data-hn-text>${esc(note)}</textarea><span class="pa-cnt" data-hn-cnt>${note.length}/100</span></label>
+      <button type="button" class="btn-primary" style="margin-top:16px" data-hn-nsave>บันทึก</button>`,
+    mount(el, close) {
+      el.addEventListener('input', e => { if (e.target.matches('[data-hn-text]')) { note = e.target.value.slice(0, 100); el.querySelector('[data-hn-cnt]').textContent = `${note.length}/100`; } });
+      el.addEventListener('click', e => {
+        if (!e.target.closest('[data-hn-nsave]')) return;
+        update(dd => { const t = note.trim(); dd.habitNotes ||= {}; const m = dd.habitNotes[id] ||= {}; if (t) m[k] = t; else delete m[k]; });
+        close(); onSaved?.();
+      });
+    },
+  });
+}
 // ต่อสัปดาห์: เป้าของเดือน = สัปดาห์ละ N วัน × วันในเดือน ÷ 7 (ปัดเศษ)
 export const monthTarget = (h, y, m) => Math.round((h.freq?.per || 1) * new Date(y, m + 1, 0).getDate() / 7);
 const weekly = h => h.freq?.kind === 'weekly';
@@ -77,8 +102,9 @@ function card(d, h) {
   return `<div class="hb-card" data-hb-edit="${h.id}">
     <div class="hb-l"><span class="hb-st" style="color:${c}">${FLAME(c)}${quit ? `เลิกได้แล้ว ${s} วัน` : `ติดต่อกัน ${s} ${unit}`}</span>
       <span class="hb-name">${esc(h.name)}</span><span class="hb-fq">${freqLabel(h, y, m)}</span>
+      ${noteOf(d, h, tk) ? `<span class="hb-note">${esc(noteOf(d, h, tk))}</span>` : ''}
       <span class="hb-cnt">${quit ? 'เลิกได้แล้ว' : 'ทำแล้ว'} ${ok}/${due} วัน · ${MONTHS_SHORT[m]}</span></div>
-    <div class="hb-r">${todayDue ? `<button type="button" class="hb-chk" role="checkbox" aria-checked="${todayDone}" aria-label="${esc(h.name)} ${lab}" data-hb-toggle="${h.id}">${todayDone ? `<span class="on" style="background:${c}">${CHECK}</span>` : '<span></span>'}</button>` : '<span class="hb-chk-sp"></span>'}
+    <div class="hb-r"><span class="hb-rt">${hasNotes(d, h) ? `<button type="button" class="hb-nb${noteOf(d, h, tk) ? ' on' : ''}" aria-label="โน้ตวันนี้ของ ${esc(h.name)}" data-hb-note="${h.id}">${NOTE_IC}</button>` : ''}${todayDue ? `<button type="button" class="hb-chk" role="checkbox" aria-checked="${todayDone}" aria-label="${esc(h.name)} ${lab}" data-hb-toggle="${h.id}">${todayDone ? `<span class="on" style="background:${c}">${CHECK}</span>` : '<span></span>'}</button>` : '<span class="hb-chk-sp"></span>'}</span>
       <div class="hb-grid" role="img" aria-label="${quit ? 'เลิกได้แล้ว' : 'ทำแล้ว'} ${ok}/${due} วัน เดือน${MONTHS[m]}">${cells}</div></div>
   </div>`;
 }
@@ -108,10 +134,9 @@ function yearCard(d, h) {
   }
   if (weekly(h)) due = Array.from({ length: 12 }, (_, m) => monthTarget(h, y, m)).reduce((a, b) => a + b, 0);
   const quit = h.type === 'quit', txt = quit ? `เลิกได้แล้ว ${ok}/${due} วัน` : `ทำแล้ว ${ok}/${due} ครั้ง`;
-  const todayDue = isDue(h, tk), todayDone = done(d, h, tk);
   return `<div class="hy-card" data-hb-edit="${h.id}">
     <div class="hy-top"><span class="hy-l"><span class="hy-name">${esc(h.name)}</span><span class="hy-cnt">${txt} · ปีนี้</span></span>
-      ${todayDue ? `<button type="button" class="hb-chk hy-chk" role="checkbox" aria-checked="${todayDone}" aria-label="${esc(h.name)}" data-hb-toggle="${h.id}">${todayDone ? `<span class="on" style="background:${c}">${CHECK}</span>` : '<span></span>'}</button>` : ''}</div>
+      ${hasNotes(d, h) ? `<button type="button" class="hb-nb hy-nb" aria-label="โน้ตทั้งปีของ ${esc(h.name)}" data-hb-ynotes="${h.id}">${NOTE_IC}</button>` : ''}</div>
     <div class="hy-grid" role="img" aria-label="${esc(h.name)} ทั้งปี ${y + 543} ${txt}">${cols}</div>
     <div class="hy-months">${[0, 2, 4, 6, 8, 10].map(m => `<span>${MONTHS_SHORT[m]}</span>`).join('')}</div>
   </div>`;
@@ -143,6 +168,10 @@ export function renderSideHabit() {
 export function mountSideHabit(root, rerender) {
   root.addEventListener('click', e => {
     if (e.target.closest('[data-hb-new]')) { openHabitSheet(rerender); return; }
+    const nb = e.target.closest('[data-hb-note]');
+    if (nb) { openHabitNote(nb.dataset.hbNote, rerender); return; }
+    const yn = e.target.closest('[data-hb-ynotes]');
+    if (yn) { openYearNotes(yn.dataset.hbYnotes, st.y); return; }
     const ed = e.target.closest('[data-hb-edit]');
     if (ed && !e.target.closest('[data-hb-toggle]')) { openHabitSheet(rerender, ed.dataset.hbEdit); return; }
     const b = e.target.closest('[data-hb-view],[data-hb-month],[data-hb-toggle],[data-hb-year]');
@@ -156,5 +185,21 @@ export function mountSideHabit(root, rerender) {
       update(dd => { const log = dd.habitLog[ds.hbToggle] ||= {}; if (log[k]) delete log[k]; else log[k] = true; });
     }
     rerender();
+  });
+}
+
+// สรุปโน้ตทั้งปี แบ่งตามเดือน · เดือนปัจจุบัน (หรือเดือนล่าสุดที่มีโน้ต) เปิดไว้ ที่เหลือแตะเพื่อดู · ไม่ตัดข้อความ
+function openYearNotes(id, y) {
+  const d = getData(), h = d.habits.find(x => x.id === id); if (!h) return;
+  const all = Object.entries(d.habitNotes?.[id] || {}).filter(([k]) => k.startsWith(`${y}-`)).sort(([a], [b]) => b < a ? -1 : 1);
+  const byM = {}; for (const [k, t] of all) (byM[fromKey(k).getMonth()] ||= []).push([k, t]);
+  const ms = Object.keys(byM).map(Number).sort((a, b) => b - a);
+  const t = new Date(), openM = y === t.getFullYear() && byM[t.getMonth()] ? t.getMonth() : ms[0];
+  const body = () => ms.length ? `<div class="yn">${ms.map(m => `<details class="yn-m"${m === openM ? ' open' : ''}><summary><span>${MONTHS[m]}</span><span class="yn-c">${byM[m].length} โน้ต</span></summary>
+      ${byM[m].map(([k, tx]) => { const dt = fromKey(k); return `<div class="yn-r"><span class="yn-d">${dt.getDate()} ${DAYS_SHORT[dt.getDay()]}</span><span class="yn-t">${esc(tx)}</span></div>`; }).join('')}</details>`).join('')}</div>`
+    : '<div class="ip-empty">ยังไม่มีโน้ตในปีนี้</div>';
+  openSheet({
+    title: `โน้ต · ${h.name}`, body,
+    mount(el) { el.classList.add('sh-tall'); el.querySelector('.sh-title').insertAdjacentHTML('afterend', `<div class="ia-sub">ปี ${y + 543} · ${all.length} โน้ต</div>`); },
   });
 }
