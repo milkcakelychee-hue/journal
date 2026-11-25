@@ -9,7 +9,7 @@ import { eventsOn } from './events-today.js';
 import { openEventSheet } from './event-sheet.js';
 import { catOf } from '../lib/categories.js';
 import { openImpSheet } from './imp-sheet.js';
-import { openHolidaySheet, openWfhSheet, holidaysOn, isWfh } from './holiday-sheet.js';
+import { openHolidaySheet, openWfhSheet, holidaysOn, isWfh, holDates } from './holiday-sheet.js';
 
 const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>'), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>');
@@ -82,7 +82,7 @@ export function tagRow(d, k, style) {
 // แถวปุ่มเพิ่มของวันที่เลือก: WFH · วันหยุด · วันสำคัญ (ใช้แผ่นเดียวกับหน้าวันสำคัญ ข้อมูลชุดเดียวกัน)
 const ADD_ROW = '<div class="add-row"><button type="button" class="hol-add" data-wfh-add>+ WFH</button><button type="button" class="hol-add" data-hol-add>+ วันหยุด</button><button type="button" class="hol-add" data-imp-add>+ วันสำคัญ</button></div>';
 function holRange(h, y, m) {
-  const ns = h.dates.map(fromKey).filter(x => x.getFullYear() === y && x.getMonth() === m).map(x => x.getDate());
+  const ns = holDates(h, y).map(fromKey).filter(x => x.getFullYear() === y && x.getMonth() === m).map(x => x.getDate());
   const parts = []; let a = ns[0], p = ns[0];
   for (const n of ns.slice(1).concat(null)) { if (n === p + 1) { p = n; continue; } parts.push(a === p ? `${a}` : `${a}–${p}`); a = p = n; }
   return `${parts.join(', ')} ${MONTHS_SHORT[m]}`;
@@ -100,7 +100,7 @@ function monthView(d) {
   // วันหยุดที่ติดกันหลายวัน → แถบเดียวแบบกิจกรรมหลายวัน (บลูขอ 22 พ.ย. 2569)
   const holRuns = [];
   for (const h of d.holidays || []) {
-    const ks = [...h.dates].sort(); let a = 0;
+    const ks = holDates(h, y); let a = 0;
     for (let i = 1; i <= ks.length; i++) {
       if (i < ks.length && toKey(addDays(fromKey(ks[i - 1]), 1)) === ks[i]) continue;
       holRuns.push({ hol: true, id: h.id, title: h.name, startDate: ks[a], endDate: ks[i - 1] }); a = i;
@@ -167,7 +167,7 @@ function monthView(d) {
   const imps = importantOn(d, st.sel);
   const t0 = fromKey(tk);
   const ym = `${y}-${String(m + 1).padStart(2, '0')}`;
-  const monthHols = (d.holidays || []).filter(h => h.dates.some(x => x.startsWith(ym)));
+  const monthHols = (d.holidays || []).filter(h => holDates(h, y).some(x => x.startsWith(ym)));
   const selHols = holidaysOn(d, st.sel);
   return `<div class="cal-nav"><button type="button" class="cal-arrow" aria-label="ก่อนหน้า" data-cal-month="-1">${L}</button>
       <div class="cal-range">${MONTHS[m]} <span style="color:var(--muted)">${be(y)}</span></div>

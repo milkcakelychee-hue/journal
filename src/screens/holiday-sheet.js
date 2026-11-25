@@ -10,7 +10,17 @@ const ic = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" str
 const L = ic('<path d="M14.5 6 L8.5 12 L14.5 18"/>'), R = ic('<path d="M9.5 6 L15.5 12 L9.5 18"/>');
 
 export const isWfh = (d, k) => (d.wfh || []).includes(k);
-export const holidaysOn = (d, k) => (d.holidays || []).filter(h => h.dates.includes(k));
+// วนทุกปี → ปักวันเดิมของทุกปีตั้งแต่ปีแรก (บลูขอ 25 พ.ย. 2569) · ใช้ปีที่ดู ±1 กันช่วงข้ามปี
+export function holDates(h, y) {
+  if (!h.yearly) return h.dates;
+  const base = Number(h.dates[0].slice(0, 4)), out = new Set();
+  for (let off = Math.max(0, y - 1 - base); off <= y + 1 - base; off++) for (const k of h.dates) {
+    const ny = Number(k.slice(0, 4)) + off, nk = ny + k.slice(4);
+    if (toKey(fromKey(nk)) === nk) out.add(nk); // ข้าม 29 ก.พ. ในปีที่ไม่มี
+  }
+  return [...out].sort();
+}
+export const holidaysOn = (d, k) => (d.holidays || []).filter(h => holDates(h, Number(k.slice(0, 4))).includes(k));
 
 // ปฏิทินเล็กแตะเลือกได้หลายวัน (ใช้กับวันหยุดและ WFH)
 function dayGrid(cal, dates, cls = '') {
@@ -29,7 +39,7 @@ function dayGrid(cal, dates, cls = '') {
 
 export function openHolidaySheet(onSaved, { id, date } = {}) {
   const old = id ? (getData().holidays || []).find(h => h.id === id) : null;
-  const f = { name: old?.name || '', dates: new Set(old?.dates || (date ? [date] : [])) };
+  const f = { name: old?.name || '', yearly: !!old?.yearly, dates: new Set(old?.dates || (date ? [date] : [])) };
   const d0 = fromKey(old?.dates[0] || date || todayKey());
   const cal = { y: d0.getFullYear(), m: d0.getMonth() };
   let err = false;
@@ -37,15 +47,18 @@ export function openHolidaySheet(onSaved, { id, date } = {}) {
   const body = () => `<div class="ea-lab">หยุดอะไร</div><input type="text" class="ea-input" maxlength="40" aria-label="หยุดอะไร" placeholder="เช่น ลาพักร้อน" value="${esc(f.name)}" data-hd-name>
     <div class="ea-lab" style="margin-top:16px">เลือกวัน</div>${grid()}
     <div class="hd-cnt${err ? ' err' : ''}">${f.dates.size ? `เลือกแล้ว ${f.dates.size} วัน` : 'แตะวันในปฏิทินได้หลายวัน'}</div>
+    <div class="ea-sw-row" style="margin-top:12px"><div><div class="ea-sw-t">วนทุกปี</div><div class="ea-sw-s">ปักวันเดียวกันนี้ทุกปี</div></div>
+      <button type="button" role="switch" aria-checked="${f.yearly}" aria-label="วนทุกปี" class="ea-sw${f.yearly ? ' on' : ''}" data-hd-yearly><span></span></button></div>
     <div class="${old ? 'btn-row' : ''}" style="margin-top:16px">${old ? '<button type="button" class="btn-secondary" data-hd-del>ลบ</button>' : ''}<button type="button" class="btn-primary" data-hd-save>บันทึก</button></div>`;
   openSheet({
     title: old ? 'แก้วันหยุด' : 'เพิ่มวันหยุด', body,
     mount(el, close, render) {
       el.addEventListener('input', e => { if (e.target.matches('[data-hd-name]')) f.name = e.target.value; });
       el.addEventListener('click', async e => {
-        const b = e.target.closest('[data-hd-day],[data-hd-month],[data-hd-save],[data-hd-del]'); if (!b) return;
+        const b = e.target.closest('[data-hd-day],[data-hd-month],[data-hd-save],[data-hd-del],[data-hd-yearly]'); if (!b) return;
         const ds = b.dataset;
-        if (ds.hdDay) { f.dates.has(ds.hdDay) ? f.dates.delete(ds.hdDay) : f.dates.add(ds.hdDay); err = false; render(); }
+        if (ds.hdYearly !== undefined) { f.yearly = !f.yearly; render(); }
+        else if (ds.hdDay) { f.dates.has(ds.hdDay) ? f.dates.delete(ds.hdDay) : f.dates.add(ds.hdDay); err = false; render(); }
         else if (ds.hdMonth) { const n = cal.m + Number(ds.hdMonth); cal.y += Math.floor(n / 12); cal.m = (n + 12) % 12; render(); }
         else if (ds.hdDel !== undefined) {
           if (!await confirmDelete({ title: `ลบวันหยุด "${old.name}"?` })) return;
@@ -55,7 +68,7 @@ export function openHolidaySheet(onSaved, { id, date } = {}) {
           const name = f.name.trim();
           if (!name) { el.querySelector('[data-hd-name]').focus(); return; }
           if (!f.dates.size) { err = true; render(); return; }
-          const rec = { name, dates: [...f.dates].sort() };
+          const rec = { name, yearly: f.yearly, dates: [...f.dates].sort() };
           update(d => { d.holidays ||= []; if (old) Object.assign(d.holidays.find(h => h.id === old.id), rec); else d.holidays.push({ id: newId(), ...rec }); });
           close(); onSaved?.();
         }

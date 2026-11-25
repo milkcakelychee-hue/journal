@@ -16,7 +16,7 @@ const FLAME = c => `<svg width="14" height="14" viewBox="0 0 24 24" fill="${c}" 
 export const HABIT_COLORS = ['#D9675F', '#E58F88', '#E487B4', '#9C86D6', '#6F7BD8', '#6C9BD1', '#5DADE2', '#7D8A9B', '#5FBDB6', '#4F9A6E', '#7DBE78', '#A6C35A', '#D9BC3C', '#EBA463', '#A9805E', '#B5A48E']; // เรียงตามโทนสี (16 สี) // แถวที่ 2 (บลูขอเพิ่ม 22 พ.ย. 2569)
 export const light = c => tint(c, 0.72); // สีอ่อน = ไม่สำเร็จ
 
-const st = { view: 'month', y: 0, m: 0 };
+const st = { view: 'month', y: 0, m: 0, yn: {} }; // yn[habitId] = { m: เดือนที่เปิด, more: ดูทั้งเดือน }
 export function resetSideHabit() { const t = new Date(); Object.assign(st, { view: 'month', y: t.getFullYear(), m: t.getMonth() }); }
 resetSideHabit();
 
@@ -28,6 +28,8 @@ export function isDue(h, k) {
   if (f.kind === 'alt') return Math.round((fromKey(k) - fromKey(h.startDate || k)) / 864e5) % 2 === 0;
   return true;
 }
+// ช่องที่ทำไม่สำเร็จ = ขีดเฉียงตามสีนิสัย
+const MISS = (c, w = 3) => `repeating-linear-gradient(135deg, ${c} 0 1px, ${tint(c, 0.85)} 1px ${w}px)`;
 const done = (d, h, k) => !!d.habitLog[h.id]?.[k];
 const noteOf = (d, h, k) => d.habitNotes?.[h.id]?.[k] || '';
 // เปิดโน้ตรายวันไว้ไหม (ตั้งตอนสร้าง/แก้ Habit) · ของเก่าที่ยังไม่ได้ตั้ง = เปิดถ้าเคยจดโน้ตแล้ว
@@ -93,7 +95,7 @@ function card(d, h) {
     const ring = k === tk ? ' today' : '';
     cells += k > tk || (weekly(h) && k < tk && !dn) ? '<span class="hb-c fut"></span>'
       : k === tk && !dn ? `<span class="hb-c${ring}" style="border:1.5px solid ${c}"></span>`
-      : `<span class="hb-c${ring}" style="background:${dn ? c : lt}"></span>`;
+      : `<span class="hb-c${ring}" style="background:${dn ? c : MISS(c)}"></span>`;
   }
   const quit = h.type === 'quit', s = streak(d, h), unit = weekly(h) ? 'สัปดาห์' : (h.freq?.kind || 'daily') === 'daily' ? 'วัน' : 'ครั้ง';
   if (weekly(h)) due = monthTarget(h, y, m);
@@ -128,7 +130,7 @@ function yearCard(d, h) {
       if (k > tk) { col += '<span class="hy-c" style="background:#EFEFF2"></span>'; continue; }
       due++;
       const dn = done(d, h, k); if (dn) ok++;
-      col += weekly(h) && k < tk && !dn ? '<span class="hy-c" style="background:#EFEFF2"></span>' : k === tk && !dn ? `<span class="hy-c" style="border:1px solid ${c}"></span>` : `<span class="hy-c" style="background:${dn ? c : lt}"></span>`;
+      col += weekly(h) && k < tk && !dn ? '<span class="hy-c" style="background:#EFEFF2"></span>' : k === tk && !dn ? `<span class="hy-c" style="border:1px solid ${c}"></span>` : `<span class="hy-c" style="background:${dn ? c : MISS(c, 2.5)}"></span>`;
     }
     cols += `<span class="hy-col">${col}</span>`;
   }
@@ -136,10 +138,29 @@ function yearCard(d, h) {
   const quit = h.type === 'quit', txt = quit ? `เลิกได้แล้ว ${ok}/${due} วัน` : `ทำแล้ว ${ok}/${due} ครั้ง`;
   return `<div class="hy-card" data-hb-edit="${h.id}">
     <div class="hy-top"><span class="hy-l"><span class="hy-name">${esc(h.name)}</span><span class="hy-cnt">${txt} · ปีนี้</span></span>
-      ${hasNotes(d, h) ? `<button type="button" class="hb-nb hy-nb" aria-label="โน้ตทั้งปีของ ${esc(h.name)}" data-hb-ynotes="${h.id}">${NOTE_IC}</button>` : ''}</div>
+</div>
     <div class="hy-grid" role="img" aria-label="${esc(h.name)} ทั้งปี ${y + 543} ${txt}">${cols}</div>
     <div class="hy-months">${[0, 2, 4, 6, 8, 10].map(m => `<span>${MONTHS_SHORT[m]}</span>`).join('')}</div>
+    ${hasNotes(d, h) ? yearNotes(d, h, y) : ''}
   </div>`;
+}
+// โน้ตในการ์ดปี · แบบ ค. ป้าย 12 เดือน (6×2) แตะเปิด/ซ่อนโน้ตเดือนนั้น · โชว์ 5 อันแรก แล้วกดดูทั้งเดือน (บลูเลือก 25 พ.ย. 2569)
+const SHOW = 5;
+function yearNotes(d, h, y) {
+  const notes = d.habitNotes?.[h.id] || {}, byM = Array.from({ length: 12 }, () => []);
+  for (const [k, t] of Object.entries(notes)) if (k.startsWith(`${y}-`) && t) byM[fromKey(k).getMonth()].push([k, t]);
+  const total = byM.reduce((a, b) => a + b.length, 0), o = st.yn[h.id] || {};
+  const chips = byM.map((l, m) => l.length
+    ? `<button type="button" class="yn-chip${o.m === m ? ' on' : ''}" aria-pressed="${o.m === m}" aria-label="โน้ต${MONTHS[m]} ${l.length} อัน" data-yn-m="${h.id}:${m}"><span>${MONTHS_SHORT[m]}</span><b>${l.length}</b></button>`
+    : `<span class="yn-chip off"><span>${MONTHS_SHORT[m]}</span><b>–</b></span>`).join('');
+  let list = '';
+  if (o.m != null && byM[o.m].length) {
+    const l = byM[o.m].sort(([a], [b]) => b < a ? -1 : 1), shown = o.more ? l : l.slice(0, SHOW);
+    list = `<div class="yn-list">${shown.map(([k, tx]) => { const dt = fromKey(k); return `<div class="yn-r"><span class="yn-d">${dt.getDate()} ${DAYS_SHORT[dt.getDay()]}</span><span class="yn-t">${esc(tx)}</span></div>`; }).join('')}
+      ${l.length > SHOW ? `<button type="button" class="yn-more" data-yn-more="${h.id}">${o.more ? 'ย่อ' : `ดูทั้งเดือน (${l.length})`}</button>` : ''}</div>`;
+  }
+  return `<div class="yn-box"><div class="yn-head"><span>โน้ต ${total} อัน</span>${total ? `<button type="button" class="yn-all" data-hb-ynotes="${h.id}">ดูทั้งหมด</button>` : ''}</div>
+    <div class="yn-chips">${chips}</div>${list}</div>`;
 }
 function yearSection(d, type, title) {
   const list = d.habits.filter(h => (h.type || 'build') === type);
@@ -157,7 +178,7 @@ export function renderSideHabit() {
     ${st.view === 'month' ? `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="เดือนก่อน" data-hb-month="-1">${L}</button>
       <div class="sm-title">${MONTHS[st.m]} <span style="color:var(--muted)">${st.y + 543}</span></div>
       <button type="button" class="cal-arrow" aria-label="เดือนถัดไป" data-hb-month="1">${R}</button></div>
-    <div class="hb-leg"><span><i style="background:#6C9BD1"></i>สำเร็จ</span><span><i style="background:#D5E3F2"></i>ไม่สำเร็จ</span><span><i class="fut"></i>ยังมาไม่ถึง</span><span>ช่องว่าง = ไม่ต้องทำ</span></div>
+    <div class="hb-leg"><span><i style="background:#6C9BD1"></i>สำเร็จ</span><span><i style="background:${MISS('#6C9BD1')}"></i>ไม่สำเร็จ</span><span><i class="fut"></i>ยังมาไม่ถึง</span><span>ช่องว่าง = ไม่ต้องทำ</span></div>
     ${section(d, 'build', 'นิสัยที่อยากสร้าง')}${section(d, 'quit', 'นิสัยที่อยากเลิก')}` : `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="ปีก่อน" data-hb-year="-1">${L}</button>
       <div class="sm-title">${st.y + 543}</div>
       <button type="button" class="cal-arrow" aria-label="ปีถัดไป" data-hb-year="1">${R}</button></div>
@@ -172,6 +193,13 @@ export function mountSideHabit(root, rerender) {
     if (nb) { openHabitNote(nb.dataset.hbNote, rerender); return; }
     const yn = e.target.closest('[data-hb-ynotes]');
     if (yn) { openYearNotes(yn.dataset.hbYnotes, st.y); return; }
+    const ym = e.target.closest('[data-yn-m],[data-yn-more]');
+    if (ym) {
+      if (ym.dataset.ynMore) { const o = st.yn[ym.dataset.ynMore]; o.more = !o.more; }
+      else { const [id, m] = ym.dataset.ynM.split(':'), o = st.yn[id] || {}; st.yn[id] = o.m === +m ? {} : { m: +m }; }
+      rerender(); return;
+    }
+    if (e.target.closest('.yn-box')) return; // แตะพื้นที่โน้ตไม่เปิดแผ่นแก้นิสัย
     const ed = e.target.closest('[data-hb-edit]');
     if (ed && !e.target.closest('[data-hb-toggle]')) { openHabitSheet(rerender, ed.dataset.hbEdit); return; }
     const b = e.target.closest('[data-hb-view],[data-hb-month],[data-hb-toggle],[data-hb-year]');

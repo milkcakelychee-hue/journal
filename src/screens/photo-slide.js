@@ -1,7 +1,7 @@
 // ดูแบบสไลด์รายวัน · บอร์ด Side-PhotoSlide · ตัวสลับ สไลด์ | ปฏิทิน · ‹ › ปัดดูวันอื่น (เฉพาะวันที่มีภาพในเดือนนั้น)
 import { getData } from '../store.js';
 import { MONTHS, fromKey } from '../lib/date-th.js';
-import { photoURL } from '../lib/photos.js';
+import { photoURL, posStyle } from '../lib/photos.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const DAY_FULL = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
@@ -23,7 +23,7 @@ export function openPhotoSlide(y, m, startKey, onCalendar) {
       <div class="sl-top"><button type="button" class="sl-x" aria-label="ปิด" data-sl-close>${X}</button><span>${MONTHS[m]} ${y + 543} · ${i + 1} / ${keys.length}</span><span style="width:44px"></span></div>
       <div class="seg" style="margin-top:8px"><button type="button" class="seg-btn on" aria-pressed="true">สไลด์</button><button type="button" class="seg-btn" aria-pressed="false" data-sl-cal>ปฏิทิน</button></div>
       <div class="sl-day"><div class="sl-n">${dt.getDate()}</div><div class="sl-w">${DAY_FULL[dt.getDay()]}</div></div>
-      <div class="sl-frame" role="img" aria-label="ภาพ${DAY_FULL[dt.getDay()]}ที่ ${dt.getDate()} ${MONTHS[m]}" data-sl-swipe><span class="stamp"></span>${u ? `<img src="${u}" alt="">` : ''}</div>
+      <div class="sl-frame" role="img" aria-label="ภาพ${DAY_FULL[dt.getDay()]}ที่ ${dt.getDate()} ${MONTHS[m]}" data-sl-swipe><span class="stamp"></span>${u ? `<img src="${u}" alt=""${posStyle(k)}>` : ''}</div>
       ${note ? `<div class="sl-note">${esc(note)}</div>` : ''}
       <div class="sl-nav"><button type="button" class="sl-arrow" aria-label="วันก่อน" data-sl-go="-1"${i ? '' : ' disabled'}>${L}</button><span class="sl-dots">${dots}</span><button type="button" class="sl-arrow" aria-label="วันถัดไป" data-sl-go="1"${i < keys.length - 1 ? '' : ' disabled'}>${R}</button></div>
       <div class="sl-hint">ปัดซ้าย-ขวาเพื่อดูวันอื่น</div></div>`;

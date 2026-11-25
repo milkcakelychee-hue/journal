@@ -1,5 +1,8 @@
 // ภาพ "หนึ่งวันหนึ่งภาพ": ย่อภาพก่อนเก็บ · แคช object URL ไว้ในหน่วยความจำ
-import { getPhoto, putPhoto, deletePhoto } from '../store.js';
+import { getPhoto, putPhoto, deletePhoto, getData } from '../store.js';
+
+// ตำแหน่งตัดภาพที่เลือกเอง (บลูขอ 25 พ.ย. 2569) · ค่าเริ่ม = กลางภาพ
+export const posStyle = k => { const p = getData().photos[k]?.pos; return p ? ` style="object-position:${p.x}% ${p.y}%"` : ''; };
 
 const urls = new Map(), loading = new Set();
 // คืน URL ถ้าโหลดแล้ว · ถ้ายัง: เริ่มโหลดแล้วเรียก onReady เมื่อเสร็จ

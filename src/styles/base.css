@@ -886,3 +886,21 @@ button.smc-day { border: 0; background: none; padding: 0; width: 100%; font-fami
 .yn-r:last-child { padding-bottom: 10px; }
 .yn-d { flex: none; width: 44px; color: var(--muted); font-size: 12px; }
 .yn-t { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+/* กรอบตัดภาพ = สัดส่วนช่องภาพในสแตมป์ 260×320 · ลากเลื่อนได้ */
+.pa-img.crop { height: auto; width: 244px; aspect-ratio: 260 / 320; margin: 0 auto; border-radius: 2px; touch-action: none; cursor: grab; box-shadow: 0 0 0 1px var(--border); }
+.pa-img.crop img { pointer-events: none; user-select: none; }
+/* โน้ตในการ์ดปี · ป้ายเดือน 6×2 */
+.yn-box { margin-top: 12px; padding-top: 10px; border-top: 1px solid #E6E6EA; cursor: default; }
+.yn-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); min-height: 28px; }
+.yn-all { border: 0; background: none; padding: 6px 0 6px 12px; font-family: inherit; font-size: 13px; color: var(--ink); font-weight: 500; }
+.yn-chips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 4px; }
+.yn-chip { height: 40px; border: 0; border-radius: 10px; background: var(--gray-soft); padding: 0; font-family: inherit; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.yn-chip span { font-size: 11px; color: var(--muted); line-height: 13px; }
+.yn-chip b { font-size: 14px; font-weight: 500; line-height: 17px; }
+.yn-chip.off { background: none; box-shadow: inset 0 0 0 1px #EFEFF2; }
+.yn-chip.off b, .yn-chip.off span { color: #C7C7CC; }
+.yn-chip.on { background: var(--ink); }
+.yn-chip.on span, .yn-chip.on b { color: #fff; }
+.yn-list { margin-top: 8px; }
+.yn-list .yn-r:first-child { border-top: 0; }
+.yn-more { width: 100%; height: 36px; margin-top: 4px; border: 0; border-radius: 10px; background: var(--gray-soft); font-family: inherit; font-size: 13px; color: var(--ink); }
