@@ -33,25 +33,28 @@ const listeners = new Set();
 export const onSync = l => (listeners.add(l), () => listeners.delete(l));
 const emit = () => [...listeners].forEach(l => l());
 
+// รูปทั้งหมดที่ต้องซิงก์: หนึ่งวันหนึ่งภาพ (key = วันที่) + รูปใน Junk journal (key = "jj-<id>")
+const photoEntries = d => [...Object.entries(d.photos || {}).map(([k, p]) => [k, p.updatedAt]), ...Object.entries(d.junkImgs || {}).map(([k, p]) => ['jj-' + k, p.updatedAt])];
+
 async function pushPhotos(code, d) {
-  const map = phMap();
-  for (const [day, p] of Object.entries(d.photos || {})) {
-    if (map[day] === p.updatedAt) continue;
+  const map = phMap(), all = photoEntries(d), keys = new Set(all.map(e => e[0]));
+  for (const [day, at] of all) {
+    if (map[day] === at) continue;
     const b = await getPhoto(day); if (!b) continue;
     await rpc('photo_put', { p_code: code, p_day: day, p_img: await blobToB64(b) });
-    map[day] = p.updatedAt;
+    map[day] = at;
   }
-  for (const day of Object.keys(map)) if (!d.photos?.[day]) { await rpc('photo_del', { p_code: code, p_day: day }); delete map[day]; }
+  for (const day of Object.keys(map)) if (!keys.has(day)) { await rpc('photo_del', { p_code: code, p_day: day }); delete map[day]; }
   ls(LS_PH, map);
 }
 async function pullPhotos(code, d) {
-  const map = phMap();
-  for (const [day, p] of Object.entries(d.photos || {})) {
-    if (map[day] === p.updatedAt) continue;
+  const map = phMap(), all = photoEntries(d), keys = new Set(all.map(e => e[0]));
+  for (const [day, at] of all) {
+    if (map[day] === at) continue;
     const img = await rpc('photo_get', { p_code: code, p_day: day });
-    if (img) { await savePhoto(day, await b64ToBlob(img)); map[day] = p.updatedAt; }
+    if (img) { await savePhoto(day, await b64ToBlob(img)); map[day] = at; }
   }
-  for (const day of Object.keys(map)) if (!d.photos?.[day]) { await removePhoto(day); delete map[day]; }
+  for (const day of Object.keys(map)) if (!keys.has(day)) { await removePhoto(day); delete map[day]; }
   ls(LS_PH, map);
 }
 

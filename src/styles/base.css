@@ -990,3 +990,63 @@ button.smc-day { border: 0; background: none; padding: 0; width: 100%; font-fami
 .jn-stack > .jn-top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14px; background: linear-gradient(transparent, rgba(0,0,0,.04)); pointer-events: none; } /* ปลายกระดาษให้รู้ว่าลากได้ */
 .jn-flapw { position: absolute; inset: 0; pointer-events: none; z-index: 3; filter: drop-shadow(-3px -2px 6px rgba(60,45,20,.28)); }
 .tl-due { position: absolute; top: 12px; left: 12px; width: 10px; height: 10px; border-radius: 5px; background: #F2994A; box-shadow: 0 0 0 2px #fff; }
+/* ---------- Junk journal (บลูขอ 26 พ.ย. 2569) ---------- */
+.jj-head { display: flex; align-items: center; justify-content: space-between; margin-top: -8px; }
+.jj-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.jj-thumb { border: 0; padding: 0; background: none; font: inherit; color: inherit; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.jj-date { font-size: 13px; color: var(--muted); }
+.jj-page { position: relative; width: 100%; aspect-ratio: 4 / 3; background-color: #F5F0E6; border-radius: 4px; overflow: hidden; box-shadow: 0 0 0 .5px #DDD5C5, 0 6px 16px rgba(0,0,0,.06); }
+.jj-it { position: absolute; }
+.jj-it img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-select: none; user-select: none; }
+.jj-ed { position: fixed; inset: 0; z-index: 70; background: #ECEAE4; display: flex; flex-direction: column; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+.jj-bar { display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 12px; flex: none; }
+.jj-tools { display: flex; align-items: center; gap: 4px; }
+.jj-tb { height: 40px; border: 0; background: none; padding: 0 10px; font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); }
+.jj-danger { color: #D9675F; font-weight: 500; font-size: 15px; }
+.jj-ib { width: 44px; height: 44px; border: 0; border-radius: 22px; background: none; padding: 0; color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.jj-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px 16px 24px; touch-action: none; }
+.jj-stage .jj-page { width: min(100%, calc((100dvh - 180px) * 4 / 3)); }
+.jj-stage .jj-page::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.jj-it.sel { outline: 1.5px dashed #6E6A63; outline-offset: 3px; }
+
+/* กระดาษ Junk journal: เม็ดกระดาษ (noise) + ลาย · ใช้ % ให้รูปย่อกับหน้าแก้เหมือนกัน */
+.pp-cream { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), #F4EFE4; }
+.pp-lined { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), repeating-linear-gradient(transparent 0 calc(8.33% - 1px), #D9D2C4 calc(8.33% - 1px) 8.33%) 0 4% / 100% 100% no-repeat, #F6F2E8; }
+.pp-grid { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(90deg, #DCE3EA 1px, transparent 1px) 0 0 / 16px 16px, linear-gradient(#DCE3EA 1px, transparent 1px) 0 0 / 16px 16px, #F7F6F1; }
+.pp-dot { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(circle, #C9C2B4 1.1px, transparent 1.5px) 0 0 / 14px 14px, #F6F2EA; }
+.pp-kraft { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)'/%3E%3C/svg%3E"), #C9A57A; }
+.pp-green { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), #8FC58A; }
+.jj-papers { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 8px; flex: none; }
+.jj-pp { flex: none; border: 0; background: none; padding: 0; font: inherit; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.jj-pp span { width: 52px; height: 39px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+.jj-pp.on { color: var(--ink); font-weight: 500; }
+.jj-pp.on span { box-shadow: 0 0 0 2px var(--ink); }
+/* Junk journal ช่วง 2: โพสต์อิท + วางรูป */
+.jj-page { container-type: inline-size; }
+.jj-note { aspect-ratio: 1; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.08); }
+.jj-note::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 12%; background: rgba(0,0,0,.04); pointer-events: none; }
+.jj-nt { position: absolute; inset: 14% 8% 6%; font-size: 3.2cqw; line-height: 1.35; color: #3A3A3C; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; outline: 0; -webkit-user-select: text; user-select: text; }
+.jj-nt[contenteditable] { overflow-y: auto; cursor: text; font-size: max(16px, 3.2cqw); } /* iOS ซูมเมื่อช่องพิมพ์เล็กกว่า 16px */
+.jj-nt[contenteditable]:empty::before { content: 'พิมพ์ข้อความ'; color: rgba(0,0,0,.3); }
+.jj-pp span[style] { box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.jj-toast { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%); background: rgba(28,28,30,.86); color: #fff; font-size: 14px; padding: 10px 16px; border-radius: 12px; white-space: nowrap; }
+.jj-tools .jj-ib { width: 40px; }
+.jj-h { position: absolute; right: -11px; bottom: -11px; width: 22px; height: 22px; border-radius: 11px; background: #fff; box-shadow: 0 0 0 1.5px #6E6A63, 0 2px 4px rgba(0,0,0,.2); cursor: nwse-resize; z-index: 1; }
+.jj-h::before { content: ''; position: absolute; inset: -11px; } /* พื้นที่กดใหญ่ขึ้นสำหรับนิ้ว */
+.jj-thumb .jj-h { display: none; }
+.jj-save { height: 36px; border: 0; border-radius: 18px; background: var(--ink); color: #fff; font: inherit; font-size: 15px; font-weight: 600; padding: 0 16px; margin-left: 4px; }
+.jj-cancel { font-weight: 500; color: var(--muted); }
+.jj-delp { align-self: center; margin-bottom: 8px; flex: none; }
+.jj-tools .jj-ib { width: 46px; height: 48px; border-radius: 10px; flex-direction: column; gap: 1px; }
+.jj-ib small { font-size: 10px; line-height: 12px; color: var(--muted); white-space: nowrap; }
+.jj-ib[aria-pressed="true"] { background: rgba(0,0,0,.06); }
+.jj-bar { height: 60px; padding: 0 8px; }
+.jj-tools { gap: 0; }
+/* หน้าแก้: เครื่องมืออยู่แถบล่าง (บลูขอคำใต้ไอคอน + กล่องข้อความ 26 พ.ย. 2569) */
+.jj-ed > .jj-tools { display: flex; justify-content: space-around; padding: 6px 8px 8px; border-top: 1px solid rgba(0,0,0,.06); background: #F4F2EC; flex: none; }
+.jj-ed > .jj-tools .jj-ib { width: 56px; height: 50px; }
+.jj-ib-del, .jj-ib-del small { color: #D9675F; }
+.jj-text { container-type: inline-size; }
+.jj-tt { font-size: 11cqi; line-height: 1.3; color: #2A2A2C; white-space: pre-wrap; overflow-wrap: anywhere; outline: 0; min-height: 1.3em; text-align: center; -webkit-user-select: text; user-select: text; }
+.jj-tt[contenteditable] { font-size: max(16px, 11cqi); cursor: text; background: rgba(255,255,255,.4); }
+.jj-tt[contenteditable]:empty::before { content: 'พิมพ์ข้อความ'; color: rgba(0,0,0,.3); }

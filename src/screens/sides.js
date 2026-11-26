@@ -4,8 +4,9 @@ import { renderSideHabit, mountSideHabit, resetSideHabit } from './side-habit.js
 import { renderSideHealth, mountSideHealth, resetSideHealth } from './side-health.js';
 import { renderSideImp, mountSideImp, resetSideImp } from './side-imp.js';
 import { renderSidePhoto, mountSidePhoto, resetSidePhoto } from './side-photo.js';
+import { renderSideJunk, mountSideJunk, resetSideJunk } from './side-junk.js';
 import { renderSideJournal, mountSideJournal, resetSideJournal } from './side-journal.js';
-const SUBS = { mood: [renderSideMood, mountSideMood, resetSideMood], habit: [renderSideHabit, mountSideHabit, resetSideHabit], health: [renderSideHealth, mountSideHealth, resetSideHealth], important: [renderSideImp, mountSideImp, resetSideImp], photo: [renderSidePhoto, mountSidePhoto, resetSidePhoto], journal: [renderSideJournal, mountSideJournal, resetSideJournal] };
+const SUBS = { mood: [renderSideMood, mountSideMood, resetSideMood], habit: [renderSideHabit, mountSideHabit, resetSideHabit], health: [renderSideHealth, mountSideHealth, resetSideHealth], important: [renderSideImp, mountSideImp, resetSideImp], photo: [renderSidePhoto, mountSidePhoto, resetSidePhoto], journal: [renderSideJournal, mountSideJournal, resetSideJournal], junk: [renderSideJunk, mountSideJunk, resetSideJunk] };
 const sub = () => SUBS[location.hash.split('/')[1]];
 const ARROW = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 L17 7"/><path d="M8.5 7 H17 V15.5"/></svg>';
 const G = '#C9C9CE';
@@ -16,6 +17,7 @@ const SIDES = [
   { id: 'important', label: 'วันสำคัญ', icon: `<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="11" width="30" height="30" rx="3" fill="${G}" transform="rotate(-6 24 26)"/><circle cx="24" cy="10" r="5" fill="${G}"/></svg>` },
   { id: 'photo', label: 'หนึ่งวันหนึ่งภาพ', icon: `<svg width="50" height="50" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="7" width="30" height="34" rx="2" fill="${G}"/><circle cx="30" cy="17" r="3.5" fill="#FFFFFF"/><path d="M13 36 L21 25 L27 32 L30 28 L35 36 Z" fill="#FFFFFF"/></svg>` },
   { id: 'journal', label: 'บันทึก', icon: `<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><rect x="11" y="6" width="26" height="30" rx="2" fill="${G}"/><rect x="6" y="28" width="36" height="14" rx="5" fill="${G}"/><rect x="15" y="13" width="14" height="2.5" rx="1.25" fill="#FFFFFF"/><rect x="15" y="19" width="18" height="2.5" rx="1.25" fill="#FFFFFF"/></svg>` },
+  { id: 'junk', label: 'Junk journal', icon: `<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="24" height="30" rx="2" fill="${G}" transform="rotate(-8 20 23)"/><rect x="18" y="12" width="22" height="26" rx="2" fill="${G}" transform="rotate(7 29 25)"/><rect x="22" y="9" width="12" height="5" fill="#FFFFFF" opacity=".8" transform="rotate(7 28 11)"/></svg>` },
 ];
 
 export const renderSides = () => sub() ? sub()[0]() : `<div class="today">

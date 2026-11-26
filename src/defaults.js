@@ -66,6 +66,8 @@ export function createDefaultData() {
     symptomArchive: [],
     symptomLog: [],            // { id, date, symptomId, note, time }
     journal: {},               // { 'YYYY-MM-DD': { text, updatedAt } } บันทึกเครื่องพิมพ์ดีด วันละแผ่น
+    junk: [],                  // Junk journal [{ id, createdAt, updatedAt, items: [{ id, img, x, y, w, ar, r }] }] · x,y = กลางชิ้น (สัดส่วนของหน้า) · w = กว้าง/หน้า · ar = สูง/กว้าง · r = องศา · ลำดับ = ซ้อน
+    junkImgs: {},              // { imgId: { updatedAt } } ตัวรูปอยู่ใน store "photos" key "jj-<id>" · ซิงก์ไปกับรูปรายวัน
     photos: {},                // { 'YYYY-MM-DD': { note, updatedAt } } · ตัวภาพอยู่ใน store "photos" แยก
     updatedAt: 0,
   };

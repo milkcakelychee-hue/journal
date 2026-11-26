@@ -3,7 +3,7 @@
 import { registerSW } from 'virtual:pwa-register';
 
 const busy = () => {
-  if (document.querySelector('.sheet')) return true;
+  if (document.querySelector('.sheet, .jj-ed')) return true;
   const el = document.activeElement;
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 };
