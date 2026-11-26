@@ -13,6 +13,7 @@ const PAPER_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" st
 const NOTE_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5 H19.5 V14 L14 19.5 H4.5 Z"/><path d="M14 19.5 V14 H19.5"/></svg>';
 const PASTE_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5 V3.5 H15 V5"/><path d="M9 12 H15 M9 15.5 H13"/></svg>';
 const TEXT_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 6 H19 M12 6 V19 M9 19 H15"/></svg>';
+const CROP_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 V17 H21"/><path d="M3 7 H17 V21"/></svg>';
 const TRASH = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7 H19.5"/><path d="M9.5 7 V4.5 H14.5 V7"/><path d="M6.5 7 L7.5 20 H16.5 L17.5 7"/></svg>';
 
 let redraw = () => {};
@@ -30,7 +31,10 @@ function itemHtml(it, sel, editing) {
   if (it.kind === 'text') return `<div class="jj-it jj-text${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="${pos}"><div class="jj-tt"${editing ? ' contenteditable="true" data-jj-nt' : ''} aria-label="ข้อความ">${escT(it.text || '')}</div>${sel ? HANDLE : ''}</div>`;
   if (it.kind === 'note') return `<div class="jj-it jj-note${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="${pos};background:${noteBg(it.color)}"><div class="jj-nt"${editing ? ' contenteditable="true" data-jj-nt' : ''} aria-label="ข้อความโพสต์อิท">${escT(it.text || '')}</div>${sel ? HANDLE : ''}</div>`;
   const u = photoURL('jj-' + it.img, () => redraw());
-  return `<div class="jj-it${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="left:${it.x * 100}%;top:${it.y * 100}%;width:${it.w * 100}%;aspect-ratio:${1 / it.ar};transform:translate(-50%,-50%) rotate(${it.r}deg)">${u ? `<img src="${u}" alt="" draggable="false">` : ''}${sel ? HANDLE : ''}</div>`;
+  // ครอบรูป: crop = ส่วนที่เหลือ (สัดส่วนของรูปเต็ม) · กล่องแสดงแค่ส่วนนั้น รูปเต็มเลื่อนอยู่ข้างใน
+  const c = it.crop || { l: 0, t: 0, r: 1, b: 1 }, cw = c.r - c.l, ch = c.b - c.t;
+  const im = `left:${-c.l / cw * 100}%;top:${-c.t / ch * 100}%;width:${100 / cw}%;height:${100 / ch}%`;
+  return `<div class="jj-it jj-img${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="left:${it.x * 100}%;top:${it.y * 100}%;width:${it.w * 100}%;aspect-ratio:${cw / (ch * it.ar)};transform:translate(-50%,-50%) rotate(${it.r}deg)"><span class="jj-clip">${u ? `<img src="${u}" alt="" draggable="false" style="${im}">` : ''}</span>${sel ? HANDLE : ''}</div>`;
 }
 // กระดาษ (บลูขอ 26 พ.ย. 2569) · texture วาดด้วย CSS ไม่ต้องโหลดรูป
 export const PAPERS = [['cream', 'ครีม'], ['lined', 'มีเส้น'], ['grid', 'ตาราง'], ['dot', 'จุด'], ['kraft', 'คราฟต์'], ['green', 'เขียว']];
@@ -84,6 +88,7 @@ function openEditor(id, onDone) {
   ed.className = 'jj-ed';
   // แถบบน: ยกเลิก / บันทึก · แถบล่าง: เครื่องมือ (มีคำใต้ไอคอน · จอ iPhone วางแถวเดียวได้)
   const bar = () => `<div class="jj-bar"><button type="button" class="jj-tb jj-cancel" data-jj-cancel>ยกเลิก</button>
+      <button type="button" class="jj-fit" data-jj-fit${view.s > 1 ? '' : ' hidden'}>ดูทั้งหน้า</button>
       <button type="button" class="jj-save" data-jj-done>บันทึก</button></div>`;
   const tools = () => `<div class="jj-tools">
       <label class="jj-ib" aria-label="เพิ่มรูป">${IMG}<small>รูป</small><input type="file" accept="image/*" data-jj-file hidden></label>
@@ -91,12 +96,17 @@ function openEditor(id, onDone) {
       <button type="button" class="jj-ib" aria-label="เพิ่มข้อความ" data-jj-text>${TEXT_IC}<small>ข้อความ</small></button>
       <button type="button" class="jj-ib" aria-label="เพิ่มโพสต์อิท" aria-pressed="${picking === 'note'}" data-jj-note>${NOTE_IC}<small>โพสต์อิท</small></button>
       <button type="button" class="jj-ib" aria-label="เลือกพื้นหลัง" aria-pressed="${picking === 'paper'}" data-jj-paper>${PAPER_IC}<small>พื้นหลัง</small></button>
+      ${pg.items.find(x => x.id === sel)?.img ? `<button type="button" class="jj-ib" aria-label="ครอบรูป" data-jj-crop>${CROP_IC}<small>ครอบ</small></button>` : ''}
       ${sel ? `<button type="button" class="jj-ib jj-ib-del" aria-label="ลบชิ้นนี้" data-jj-del>${TRASH}<small>ลบ</small></button>` : ''}</div>`;
   let picking = false, editing = null, toast = '';
+  // ซูมกระดาษ (บลูขอ 27 พ.ย. 2569): สองนิ้วบนที่ว่าง = ซูม · นิ้วเดียวบนที่ว่างตอนซูมอยู่ = เลื่อน
+  const view = { s: 1, x: 0, y: 0 };
+  const applyView = () => { const pgEl = ed.querySelector('.jj-page'); if (pgEl) pgEl.style.transform = view.s > 1 ? `translate(${view.x}px,${view.y}px) scale(${view.s})` : ''; ed.querySelector('[data-jj-fit]')?.toggleAttribute('hidden', view.s <= 1); };
   const pick = () => picking === 'note' ? `<div class="jj-papers">${NOTES.map(([k, c, t]) => `<button type="button" class="jj-pp" data-jj-nc="${k}"><span style="background:${c}"></span>${t}</button>`).join('')}</div>`
     : picking === 'paper' ? `<div class="jj-papers">${PAPERS.map(([k, t]) => `<button type="button" class="jj-pp${(pg.paper || 'cream') === k ? ' on' : ''}" aria-pressed="${(pg.paper || 'cream') === k}" data-jj-pp="${k}"><span class="pp-${k}"></span>${t}</button>`).join('')}</div>` : '';
   const draw = () => {
     ed.innerHTML = `${bar()}<div class="jj-stage" data-jj-stage>${pageHtml(pg, sel, editing)}</div>${old ? '<button type="button" class="jj-tb jj-danger jj-delp" data-jj-delpage>ลบหน้านี้</button>' : ''}${pick()}${tools()}${toast ? `<div class="jj-toast" role="status">${toast}</div>` : ''}`;
+    applyView();
     const nt = ed.querySelector('[data-jj-nt]'); if (nt) { nt.focus(); const rg = document.createRange(); rg.selectNodeContents(nt); rg.collapse(false); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg); }
   };
   const say = t => { toast = t; draw(); setTimeout(() => { toast = ''; if (ed.isConnected) draw(); }, 2200); };
@@ -154,6 +164,8 @@ function openEditor(id, onDone) {
     }
     if (e.target.closest('[data-jj-paper]')) { stopEdit(); picking = picking === 'paper' ? false : 'paper'; draw(); return; }
     if (e.target.closest('[data-jj-note]')) { stopEdit(); picking = picking === 'note' ? false : 'note'; draw(); return; }
+    if (e.target.closest('[data-jj-crop]')) { openCrop(pg.items.find(x => x.id === sel)); return; }
+    if (e.target.closest('[data-jj-fit]')) { Object.assign(view, { s: 1, x: 0, y: 0 }); applyView(); return; }
     if (e.target.closest('[data-jj-paste]')) { stopEdit(); paste(); return; }
     if (e.target.closest('[data-jj-text]')) {
       stopEdit(); const it = { id: newId(), kind: 'text', text: '', x: 0.5, y: 0.4, w: 0.45, r: 0 };
@@ -190,6 +202,11 @@ function openEditor(id, onDone) {
     if (!e.target.closest('[data-jj-stage]')) return;
     if (editing) { if (e.target.closest('[data-jj-nt]')) return; stopEdit(); draw(); return; } // แตะนอกโพสต์อิท = พิมพ์เสร็จ
     const hit = e.target.closest('[data-jj-it]');
+    if (vpts.size || (pts.size === 0 && !hit)) { // ที่ว่าง → ซูม/เลื่อนกระดาษ
+      if (!vpts.size && sel) { sel = null; ed.querySelector('.jj-tools').outerHTML = tools(); ed.querySelectorAll('.jj-it.sel').forEach(el => { el.classList.remove('sel'); el.querySelector('.jj-h')?.remove(); }); }
+      try { ed.querySelector('[data-jj-stage]').setPointerCapture(e.pointerId); } catch {}
+      vpts.set(e.pointerId, { x: e.clientX, y: e.clientY }); vbegin(); e.preventDefault(); return;
+    }
     if (pts.size === 0) {
       const ns = hit?.dataset.jjIt || null;
       tap = { again: ns && ns === sel, x: e.clientX, y: e.clientY, moved: false };
@@ -204,6 +221,64 @@ function openEditor(id, onDone) {
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); begin(); e.preventDefault();
     if (g && pts.size === 1 && e.target.closest('[data-jj-h]')) { const b = ed.querySelector(`[data-jj-it="${sel}"]`).getBoundingClientRect(); g.c = { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }
   });
+  // ---------- ครอบรูป: แผงเต็มจอในหน้าแก้ (ไม่ใช่ sheet) · ลากมุม = ปรับขอบ · ลากในกรอบ = เลื่อน ----------
+  function openCrop(it) {
+    if (!it) return;
+    const c = { ...(it.crop || { l: 0, t: 0, r: 1, b: 1 }) }, u = photoURL('jj-' + it.img);
+    const pane = document.createElement('div'); pane.className = 'jj-crop';
+    const fitW = Math.min(innerWidth - 48, (innerHeight - 220) / it.ar);
+    pane.innerHTML = `<div class="jj-bar"><button type="button" class="jj-tb jj-cancel" data-cr-x>ยกเลิก</button><button type="button" class="jj-tb" data-cr-reset>รูปเต็ม</button><button type="button" class="jj-save" data-cr-ok>เสร็จ</button></div>
+      <div class="jj-cr-area"><div class="jj-cr-img" style="width:${fitW}px;aspect-ratio:${1 / it.ar}"><img src="${u}" alt="" draggable="false"><div class="jj-cr-box" data-cr-box>${['tl', 'tr', 'bl', 'br'].map(k => `<span class="jj-cr-h c-${k}" data-cr-h="${k}"></span>`).join('')}</div></div></div>`;
+    ed.append(pane);
+    const box = pane.querySelector('[data-cr-box]'), area = pane.querySelector('.jj-cr-img');
+    const show = () => Object.assign(box.style, { left: c.l * 100 + '%', top: c.t * 100 + '%', width: (c.r - c.l) * 100 + '%', height: (c.b - c.t) * 100 + '%' });
+    show();
+    let dr = null; const MIN = 0.08, cl = v => Math.min(1, Math.max(0, v));
+    pane.addEventListener('pointerdown', e => {
+      const h = e.target.closest('[data-cr-h]')?.dataset.crH, inBox = e.target.closest('[data-cr-box]'); if (!h && !inBox) return;
+      try { pane.setPointerCapture(e.pointerId); } catch {}
+      dr = { h, x: e.clientX, y: e.clientY, c0: { ...c }, r: area.getBoundingClientRect() }; e.preventDefault();
+    });
+    pane.addEventListener('pointermove', e => {
+      if (!dr) return;
+      const dx = (e.clientX - dr.x) / dr.r.width, dy = (e.clientY - dr.y) / dr.r.height, o = dr.c0;
+      if (!dr.h) { const w = o.r - o.l, hh = o.b - o.t; c.l = Math.min(1 - w, Math.max(0, o.l + dx)); c.r = c.l + w; c.t = Math.min(1 - hh, Math.max(0, o.t + dy)); c.b = c.t + hh; }
+      else {
+        if (dr.h.includes('l')) c.l = Math.min(o.r - MIN, cl(o.l + dx)); else c.r = Math.max(o.l + MIN, cl(o.r + dx));
+        if (dr.h.includes('t')) c.t = Math.min(o.b - MIN, cl(o.t + dy)); else c.b = Math.max(o.t + MIN, cl(o.b + dy));
+      }
+      show();
+    });
+    const up = () => { dr = null; }; pane.addEventListener('pointerup', up); pane.addEventListener('pointercancel', up);
+    pane.addEventListener('click', e => {
+      if (e.target.closest('[data-cr-x]')) { pane.remove(); return; }
+      if (e.target.closest('[data-cr-reset]')) { Object.assign(c, { l: 0, t: 0, r: 1, b: 1 }); show(); return; }
+      if (!e.target.closest('[data-cr-ok]')) return;
+      const o = it.crop || { l: 0, t: 0, r: 1, b: 1 };
+      it.w *= (c.r - c.l) / (o.r - o.l); // ขนาดรูปบนกระดาษเท่าเดิม แค่ตัดขอบออก
+      it.crop = c.l === 0 && c.t === 0 && c.r === 1 && c.b === 1 ? undefined : c;
+      dirty = true; pane.remove(); draw();
+    });
+  }
+
+  const vpts = new Map(); let vg = null;
+  const vbegin = () => { const rc = ed.querySelector('.jj-page').getBoundingClientRect(); vg = { v: { ...view }, p0: [...vpts.values()].map(q => ({ ...q })), bx: rc.left - view.x, by: rc.top - view.y, bw: rc.width / view.s, bh: rc.height / view.s }; };
+  ed.addEventListener('pointermove', e => {
+    if (!vg || !vpts.has(e.pointerId)) return;
+    vpts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = [...vpts.values()], { v, p0 } = vg;
+    if (p.length >= 2 && p0.length >= 2) {
+      const m0 = { x: (p0[0].x + p0[1].x) / 2, y: (p0[0].y + p0[1].y) / 2 }, m1 = { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 };
+      view.s = Math.min(4, Math.max(1, v.s * Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y) / Math.max(1, Math.hypot(p0[1].x - p0[0].x, p0[1].y - p0[0].y))));
+      const ux = (m0.x - vg.bx - v.x) / v.s, uy = (m0.y - vg.by - v.y) / v.s; // จุดบนกระดาษใต้กลางนิ้ว
+      view.x = m1.x - vg.bx - ux * view.s; view.y = m1.y - vg.by - uy * view.s;
+    } else if (p.length === 1 && view.s > 1) { view.x = v.x + p[0].x - p0[0].x; view.y = v.y + p[0].y - p0[0].y; }
+    view.x = Math.min(0, Math.max(vg.bw * (1 - view.s), view.x)); view.y = Math.min(0, Math.max(vg.bh * (1 - view.s), view.y));
+    if (view.s === 1) view.x = view.y = 0;
+    applyView();
+  });
+  const vend = e => { if (!vpts.has(e.pointerId)) return; vpts.delete(e.pointerId); if (vpts.size) vbegin(); else vg = null; };
+  ed.addEventListener('pointerup', vend); ed.addEventListener('pointercancel', vend);
   ed.addEventListener('pointermove', e => {
     if (!g || !pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
