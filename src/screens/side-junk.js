@@ -14,6 +14,16 @@ const NOTE_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" str
 const PASTE_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5 V3.5 H15 V5"/><path d="M9 12 H15 M9 15.5 H13"/></svg>';
 const TEXT_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 6 H19 M12 6 V19 M9 19 H15"/></svg>';
 const CROP_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 V17 H21"/><path d="M3 7 H17 V21"/></svg>';
+const PEN_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 L5 15.5 L16 4.5 L19.5 8 L8.5 19 Z"/><path d="M14 6.5 L17.5 10"/></svg>';
+const PEN_SIZES = [[3, 'เล็ก'], [6, 'กลาง'], [12, 'ใหญ่']];
+const PEN_COLORS = ['#2A2A2C', '#D9675F', '#E58F3A', '#4F9A6E', '#4F6FD8', '#FFFFFF'];
+// จุด → เส้นโค้งนุ่ม (quadratic ผ่านจุดกึ่งกลาง)
+function smooth(p) {
+  if (p.length < 2) return `M${p[0][0]} ${p[0][1]} l0.1 0`;
+  let d = `M${p[0][0]} ${p[0][1]}`;
+  for (let i = 1; i < p.length - 1; i++) d += ` Q${p[i][0]} ${p[i][1]} ${(p[i][0] + p[i + 1][0]) >> 1} ${(p[i][1] + p[i + 1][1]) >> 1}`;
+  const z = p[p.length - 1]; return d + ` L${z[0]} ${z[1]}`;
+}
 const TRASH = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7 H19.5"/><path d="M9.5 7 V4.5 H14.5 V7"/><path d="M6.5 7 L7.5 20 H16.5 L17.5 7"/></svg>';
 
 let redraw = () => {};
@@ -28,7 +38,9 @@ const escT = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;'
 const HANDLE = '<span class="jj-h" data-jj-h aria-hidden="true"></span>';
 function itemHtml(it, sel, editing) {
   const pos = `left:${it.x * 100}%;top:${it.y * 100}%;width:${it.w * 100}%;transform:translate(-50%,-50%) rotate(${it.r}deg)`;
-  if (it.kind === 'text') return `<div class="jj-it jj-text${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="${pos}"><div class="jj-tt"${editing ? ' contenteditable="true" data-jj-nt' : ''} aria-label="ข้อความ">${escT(it.text || '')}</div>${sel ? HANDLE : ''}</div>`;
+  if (it.kind === 'draw') return `<svg class="jj-draw${sel ? ' sel' : ''}" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true"><path d="${it.d}" stroke="${it.color}" stroke-width="${it.size}"/><path class="jj-hit" data-jj-it="${it.id}" d="${it.d}" stroke="transparent" stroke-width="30"/></svg>`;
+  // ข้อความ: ตัวหนา · สีตัวอักษร · ไฮไลต์คาด (บลูขอ 27 พ.ย. 2569)
+  if (it.kind === 'text') return `<div class="jj-it jj-text${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="${pos}"><div class="jj-tw"><span class="jj-tt${it.hl ? ' hl' : ''}" style="color:${it.color || '#2A2A2C'};font-weight:${it.bold ? 700 : 400}${it.hl ? `;--hl:${it.hl}` : ''}"${editing ? ' contenteditable="true" data-jj-nt' : ''} aria-label="ข้อความ">${escT(it.text || '')}</span></div>${sel ? HANDLE : ''}</div>`;
   if (it.kind === 'note') return `<div class="jj-it jj-note${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="${pos};background:${noteBg(it.color)}"><div class="jj-nt"${editing ? ' contenteditable="true" data-jj-nt' : ''} aria-label="ข้อความโพสต์อิท">${escT(it.text || '')}</div>${sel ? HANDLE : ''}</div>`;
   const u = photoURL('jj-' + it.img, () => redraw());
   // ครอบรูป: crop = ส่วนที่เหลือ (สัดส่วนของรูปเต็ม) · กล่องแสดงแค่ส่วนนั้น รูปเต็มเลื่อนอยู่ข้างใน
@@ -93,6 +105,7 @@ function openEditor(id, onDone) {
   const tools = () => `<div class="jj-tools">
       <label class="jj-ib" aria-label="เพิ่มรูป">${IMG}<small>รูป</small><input type="file" accept="image/*" data-jj-file hidden></label>
       <button type="button" class="jj-ib" aria-label="วางรูปที่คัดลอกไว้" data-jj-paste>${PASTE_IC}<small>วาง</small></button>
+      <button type="button" class="jj-ib" aria-label="ปากกา" aria-pressed="${picking === 'pen'}" data-jj-pen>${PEN_IC}<small>ปากกา</small></button>
       <button type="button" class="jj-ib" aria-label="เพิ่มข้อความ" data-jj-text>${TEXT_IC}<small>ข้อความ</small></button>
       <button type="button" class="jj-ib" aria-label="เพิ่มโพสต์อิท" aria-pressed="${picking === 'note'}" data-jj-note>${NOTE_IC}<small>โพสต์อิท</small></button>
       <button type="button" class="jj-ib" aria-label="เลือกพื้นหลัง" aria-pressed="${picking === 'paper'}" data-jj-paper>${PAPER_IC}<small>พื้นหลัง</small></button>
@@ -102,10 +115,20 @@ function openEditor(id, onDone) {
   // ซูมกระดาษ (บลูขอ 27 พ.ย. 2569): สองนิ้วบนที่ว่าง = ซูม · นิ้วเดียวบนที่ว่างตอนซูมอยู่ = เลื่อน
   const view = { s: 1, x: 0, y: 0 };
   const applyView = () => { const pgEl = ed.querySelector('.jj-page'); if (pgEl) pgEl.style.transform = view.s > 1 ? `translate(${view.x}px,${view.y}px) scale(${view.s})` : ''; ed.querySelector('[data-jj-fit]')?.toggleAttribute('hidden', view.s <= 1); };
-  const pick = () => picking === 'note' ? `<div class="jj-papers">${NOTES.map(([k, c, t]) => `<button type="button" class="jj-pp" data-jj-nc="${k}"><span style="background:${c}"></span>${t}</button>`).join('')}</div>`
+  // ปากกา (บลูขอ 27 พ.ย. 2569): เส้นทึบ 3 ขนาด เลือกสีได้ · เปิดโหมดแล้วนิ้วเดียว = วาด
+  const pen = { size: 6, color: PEN_COLORS[0] };
+  // แถบแต่งข้อความ: ขึ้นเมื่อเลือกกล่องข้อความ · สีใช้วงล้อสีของระบบ (input type=color)
+  const textBar = () => { const it = pg.items.find(x => x.id === sel); if (it?.kind !== 'text') return '';
+    return `<div class="jj-papers jj-tbar">
+      <button type="button" class="jj-tbtn${it.bold ? ' on' : ''}" aria-pressed="${!!it.bold}" data-jj-bold><b>B</b><small>ตัวหนา</small></button>
+      <label class="jj-tbtn"><i class="jj-sw" style="background:${it.color || '#2A2A2C'}"></i><small>สีตัวอักษร</small><input type="color" value="${it.color || '#2A2A2C'}" data-jj-tcolor></label>
+      <button type="button" class="jj-tbtn${it.hl ? ' on' : ''}" aria-pressed="${!!it.hl}" data-jj-hl><i class="jj-hlic"></i><small>ไฮไลต์</small></button>
+      ${it.hl ? `<label class="jj-tbtn"><i class="jj-sw" style="background:${it.hl}"></i><small>สีไฮไลต์</small><input type="color" value="${it.hl}" data-jj-hcolor></label>` : ''}</div>`; };
+  const pick = () => picking === 'pen' ? `<div class="jj-papers jj-pens">${PEN_SIZES.map(([z, t]) => `<button type="button" class="jj-pz${pen.size === z ? ' on' : ''}" aria-label="เส้น${t}" aria-pressed="${pen.size === z}" data-jj-pz="${z}"><i style="width:${z * 1.4 + 4}px;height:${z * 1.4 + 4}px;background:${pen.color}"></i></button>`).join('')}<span class="jj-sep"></span>${PEN_COLORS.map(c => `<button type="button" class="jj-pc${pen.color === c ? ' on' : ''}" aria-label="สี ${c}" aria-pressed="${pen.color === c}" data-jj-pc="${c}"><i style="background:${c}"></i></button>`).join('')}</div>`
+    : picking === 'note' ? `<div class="jj-papers">${NOTES.map(([k, c, t]) => `<button type="button" class="jj-pp" data-jj-nc="${k}"><span style="background:${c}"></span>${t}</button>`).join('')}</div>`
     : picking === 'paper' ? `<div class="jj-papers">${PAPERS.map(([k, t]) => `<button type="button" class="jj-pp${(pg.paper || 'cream') === k ? ' on' : ''}" aria-pressed="${(pg.paper || 'cream') === k}" data-jj-pp="${k}"><span class="pp-${k}"></span>${t}</button>`).join('')}</div>` : '';
   const draw = () => {
-    ed.innerHTML = `${bar()}<div class="jj-stage" data-jj-stage>${pageHtml(pg, sel, editing)}</div>${old ? '<button type="button" class="jj-tb jj-danger jj-delp" data-jj-delpage>ลบหน้านี้</button>' : ''}${pick()}${tools()}${toast ? `<div class="jj-toast" role="status">${toast}</div>` : ''}`;
+    ed.innerHTML = `${bar()}<div class="jj-stage" data-jj-stage>${pageHtml(pg, sel, editing)}</div>${old ? '<button type="button" class="jj-tb jj-danger jj-delp" data-jj-delpage>ลบหน้านี้</button>' : ''}${pick() || textBar()}${tools()}${toast ? `<div class="jj-toast" role="status">${toast}</div>` : ''}`;
     applyView();
     const nt = ed.querySelector('[data-jj-nt]'); if (nt) { nt.focus(); const rg = document.createRange(); rg.selectNodeContents(nt); rg.collapse(false); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg); }
   };
@@ -137,6 +160,15 @@ function openEditor(id, onDone) {
     const it = { id: newId(), img, x: 0.5, y: 0.45, w, ar, r: (Math.random() - 0.5) * 8 }; // ar = สูง/กว้างของรูปจริง
     pg.items.push(it); sel = it.id; dirty = true; draw();
   };
+  // วงล้อสี: เปลี่ยนสีสด ๆ ระหว่างเลือก
+  ed.addEventListener('input', e => {
+    const tc = e.target.closest('[data-jj-tcolor],[data-jj-hcolor]'); if (!tc) return;
+    const it = pg.items.find(x => x.id === sel); if (!it) return;
+    const el = ed.querySelector(`[data-jj-it="${it.id}"] .jj-tt`);
+    if (tc.dataset.jjTcolor !== undefined) { it.color = tc.value; el.style.color = tc.value; }
+    else { it.hl = it.lastHl = tc.value; el.style.setProperty('--hl', tc.value); }
+    tc.previousElementSibling.previousElementSibling.style.background = tc.value; dirty = true;
+  });
   ed.addEventListener('change', e => { const f = e.target.closest('[data-jj-file]')?.files?.[0]; if (f) addImage(f); });
   // วางรูปจากคลิปบอร์ด (เช่น ยกวัตถุจากแอปรูปภาพ → คัดลอก) · iOS จะเด้งปุ่ม "วาง" ให้ยืนยันอีกครั้ง
   const paste = async () => {
@@ -162,6 +194,12 @@ function openEditor(id, onDone) {
       if (dirty && !await confirmDelete({ title: 'ทิ้งสิ่งที่แก้ไว้?', body: 'สิ่งที่แก้ในหน้านี้ตั้งแต่บันทึกครั้งล่าสุดจะหายไป', ok: 'ทิ้ง', cancel: 'แก้ต่อ' })) return;
       discard(); document.removeEventListener('paste', onPaste); close(); return;
     }
+    const syncText = () => { const nt = ed.querySelector('[data-jj-nt]'), it = pg.items.find(x => x.id === editing); if (nt && it) it.text = nt.innerText; };
+    if (e.target.closest('[data-jj-bold]')) { syncText(); const it = pg.items.find(x => x.id === sel); it.bold = !it.bold; dirty = true; draw(); return; }
+    if (e.target.closest('[data-jj-hl]')) { syncText(); const it = pg.items.find(x => x.id === sel); it.hl = it.hl ? undefined : (it.lastHl || '#F7E58C'); if (it.hl) it.lastHl = it.hl; dirty = true; draw(); return; }
+    if (e.target.closest('[data-jj-pen]')) { stopEdit(); picking = picking === 'pen' ? false : 'pen'; sel = null; draw(); return; }
+    const pz = e.target.closest('[data-jj-pz]'); if (pz) { pen.size = +pz.dataset.jjPz; draw(); return; }
+    const pcl = e.target.closest('[data-jj-pc]'); if (pcl) { pen.color = pcl.dataset.jjPc; draw(); return; }
     if (e.target.closest('[data-jj-paper]')) { stopEdit(); picking = picking === 'paper' ? false : 'paper'; draw(); return; }
     if (e.target.closest('[data-jj-note]')) { stopEdit(); picking = picking === 'note' ? false : 'note'; draw(); return; }
     if (e.target.closest('[data-jj-crop]')) { openCrop(pg.items.find(x => x.id === sel)); return; }
@@ -179,7 +217,7 @@ function openEditor(id, onDone) {
     const pp = e.target.closest('[data-jj-pp]'); if (pp) { pg.paper = pp.dataset.jjPp; dirty = true; draw(); return; }
     if (e.target.closest('[data-jj-del]')) {
       const it = pg.items.find(x => x.id === sel);
-      if (!await confirmDelete({ title: it?.kind === 'note' ? 'ลบโพสต์อิทนี้?' : it?.kind === 'text' ? 'ลบข้อความนี้?' : 'ลบรูปนี้ออกจากหน้า?' })) return;
+      if (!await confirmDelete({ title: it?.kind === 'note' ? 'ลบโพสต์อิทนี้?' : it?.kind === 'text' ? 'ลบข้อความนี้?' : it?.kind === 'draw' ? 'ลบเส้นนี้?' : 'ลบรูปนี้ออกจากหน้า?' })) return;
       pg.items = pg.items.filter(x => x.id !== sel); sel = editing = null;
       dirty = true; draw(); return; // รูปที่ไม่ใช้แล้วลบตอนบันทึก
     }
@@ -194,27 +232,41 @@ function openEditor(id, onDone) {
   // ---------- ลาก (1 นิ้ว) · ย่อขยาย + หมุน (2 นิ้ว) ----------
   const pts = new Map(); let g = null, tap = null;
   const begin = () => {
-    const it = pg.items.find(x => x.id === sel); if (!it) { g = null; return; }
+    const it = pg.items.find(x => x.id === sel); if (!it || it.kind === 'draw') { g = null; return; } // เส้นปากกา: เลือกเพื่อลบได้ ย้ายไม่ได้
     const r = page().getBoundingClientRect(), p = [...pts.values()];
     g = { it, r, x: it.x, y: it.y, w: it.w, rot: it.r, p0: p.map(q => ({ ...q })) };
   };
   ed.addEventListener('pointerdown', e => {
     if (!e.target.closest('[data-jj-stage]')) return;
     if (editing) { if (e.target.closest('[data-jj-nt]')) return; stopEdit(); draw(); return; } // แตะนอกโพสต์อิท = พิมพ์เสร็จ
+    if (picking === 'pen' && !vpts.size) { // โหมดปากกา
+      if (stroke) { // นิ้วที่สองลง = เลิกวาด ไปซูมแทน
+        stroke.el.remove(); const first = stroke.first; stroke = null;
+        vpts.set(first.id, first); vpts.set(e.pointerId, { x: e.clientX, y: e.clientY }); vbegin(); e.preventDefault(); return;
+      }
+      const rc = page().getBoundingClientRect(), at = ev => [Math.round((ev.clientX - rc.left) / rc.width * 1000), Math.round((ev.clientY - rc.top) / rc.height * 750)];
+      const svg = page().insertAdjacentElement('beforeend', document.createElementNS('http://www.w3.org/2000/svg', 'svg'));
+      svg.setAttribute('viewBox', '0 0 1000 750'); svg.setAttribute('preserveAspectRatio', 'none'); svg.classList.add('jj-draw');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('stroke', pen.color); path.setAttribute('stroke-width', pen.size); svg.append(path);
+      stroke = { el: svg, path, at, pts: [at(e)], id: e.pointerId, first: { id: e.pointerId, x: e.clientX, y: e.clientY } };
+      path.setAttribute('d', smooth(stroke.pts));
+      try { ed.querySelector('[data-jj-stage]').setPointerCapture(e.pointerId); } catch {}
+      e.preventDefault(); return;
+    }
     const hit = e.target.closest('[data-jj-it]');
     if (vpts.size || (pts.size === 0 && !hit)) { // ที่ว่าง → ซูม/เลื่อนกระดาษ
-      if (!vpts.size && sel) { sel = null; ed.querySelector('.jj-tools').outerHTML = tools(); ed.querySelectorAll('.jj-it.sel').forEach(el => { el.classList.remove('sel'); el.querySelector('.jj-h')?.remove(); }); }
+      if (!vpts.size && sel) { sel = null; draw(); }
       try { ed.querySelector('[data-jj-stage]').setPointerCapture(e.pointerId); } catch {}
       vpts.set(e.pointerId, { x: e.clientX, y: e.clientY }); vbegin(); e.preventDefault(); return;
     }
     if (pts.size === 0) {
       const ns = hit?.dataset.jjIt || null;
       tap = { again: ns && ns === sel, x: e.clientX, y: e.clientY, moved: false };
-      if (ns !== sel) { sel = ns; ed.querySelector('.jj-tools').outerHTML = tools(); ed.querySelectorAll('.jj-it').forEach(el => { const on = el.dataset.jjIt === sel; el.classList.toggle('sel', on); el.querySelector('.jj-h')?.remove(); if (on) el.insertAdjacentHTML('beforeend', HANDLE); }); }
+      if (ns !== sel) { sel = ns; draw(); }
       if (!sel) return;
       // แตะชิ้นไหน ชิ้นนั้นขึ้นมาบนสุด
       const i = pg.items.findIndex(x => x.id === sel);
-      if (i < pg.items.length - 1) { pg.items.push(pg.items.splice(i, 1)[0]); const el = ed.querySelector(`[data-jj-it="${sel}"]`); el.parentNode.append(el); }
+      if (i < pg.items.length - 1 && pg.items[i].kind !== 'draw') { pg.items.push(pg.items.splice(i, 1)[0]); const el = ed.querySelector(`[data-jj-it="${sel}"]`); el.parentNode.append(el); }
     }
     if (!sel) return;
     try { ed.querySelector('[data-jj-stage]').setPointerCapture(e.pointerId); } catch {}
@@ -260,6 +312,20 @@ function openEditor(id, onDone) {
       dirty = true; pane.remove(); draw();
     });
   }
+
+  let stroke = null;
+  ed.addEventListener('pointermove', e => {
+    if (!stroke || e.pointerId !== stroke.id) return;
+    const q = stroke.at(e), l = stroke.pts[stroke.pts.length - 1];
+    if (Math.hypot(q[0] - l[0], q[1] - l[1]) < 3) return;
+    stroke.pts.push(q); stroke.path.setAttribute('d', smooth(stroke.pts));
+  });
+  const strokeEnd = e => {
+    if (!stroke || e.pointerId !== stroke.id) return;
+    const s0 = stroke; stroke = null; s0.el.remove();
+    pg.items.push({ id: newId(), kind: 'draw', d: smooth(s0.pts), color: pen.color, size: pen.size }); dirty = true; draw();
+  };
+  ed.addEventListener('pointerup', strokeEnd); ed.addEventListener('pointercancel', strokeEnd);
 
   const vpts = new Map(); let vg = null;
   const vbegin = () => { const rc = ed.querySelector('.jj-page').getBoundingClientRect(); vg = { v: { ...view }, p0: [...vpts.values()].map(q => ({ ...q })), bx: rc.left - view.x, by: rc.top - view.y, bw: rc.width / view.s, bh: rc.height / view.s }; };
