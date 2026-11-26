@@ -5,7 +5,7 @@ import { miniCalHtml } from '../ui/minical.js';
 import { openSheet } from '../ui/sheet.js';
 import { confirmDelete } from '../ui/confirm.js';
 import { toHtml, fromEl, isBlank } from '../lib/journal.js';
-import { curl, animate } from '../lib/page-curl.js';
+import { attachFlip } from '../lib/page-curl.js';
 import { paperHead, renderTypewriter, bindTypewriter } from './typewriter.js';
 
 const BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6 L8.5 12 L14.5 18"/></svg>';
@@ -48,70 +48,14 @@ export function mountSideJournal(root, rerender) {
   bindTypewriter(root, rerender);
   const keysNow = () => keysOf(getData());
   const pick = k => { st.sel = k; const t = fromKey(k); st.view = { y: t.getFullYear(), m: t.getMonth() }; rerender(); };
-  // พับมุมขวาล่างขึ้นตามนิ้ว (บลูขอ 26 พ.ย. 2569) · ลากเกินครึ่ง = พับพ้นไปแผ่นเก่ากว่า · ลากลงจากบน = แผ่นใหม่กว่าพับกลับลงมา
-  const flap = () => root.querySelector('.jn-flap');
-  const size = el => [el.offsetWidth, el.offsetHeight];
-  const gone = (w, h) => [w, -h - 6]; // พับพ้นทั้งแผ่น
-  const prevPath = (p, w, h) => [w - Math.sin(p * Math.PI) * w * 0.35, -h - 6 + p * (2 * h + 6)];
-  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const go = dir => {
-    const keys = keysNow(), i = keys.indexOf(st.sel) + dir; if (i < 0 || i >= keys.length) return;
-    const el = root.querySelector(dir > 0 ? '.jn-top' : '.jn-prev');
-    if (!el || reduce()) return pick(keys[i]);
-    const [w, h] = size(el);
-    if (dir > 0) animate([w, h], gone(w, h), 520, F => curl(el, flap(), F, w, h), () => pick(keys[i]));
-    else { el.style.visibility = 'visible'; const t0 = performance.now(), tick = now => { const p = Math.min(1, (now - t0) / 520); curl(el, flap(), prevPath(1 - (1 - p) ** 3, w, h), w, h); if (p < 1) requestAnimationFrame(tick); else pick(keys[i]); }; requestAnimationFrame(tick); }
-  };
-  let drag = null;
-  root.addEventListener('pointerdown', e => {
-    const stack = e.target.closest('[data-jn-swipe]'); if (!stack) return;
-    stack.setPointerCapture?.(e.pointerId);
-    drag = { x0: e.clientX, y0: e.clientY, el: null, dir: 0, moved: false };
-  });
-  root.addEventListener('pointermove', e => {
-    if (!drag) return;
-    const dy = e.clientY - drag.y0, dx = e.clientX - drag.x0;
-    if (!drag.dir) {
-      if (Math.hypot(dx, dy) < 6) return;
-      drag.dir = dy < 0 || dx < 0 ? 1 : -1; drag.moved = true;
-      drag.el = root.querySelector(drag.dir > 0 ? '.jn-top' : '.jn-prev');
-      if (!drag.el) return;
-      [drag.w, drag.h] = size(drag.el);
-      const r = drag.el.getBoundingClientRect(); drag.r = r;
-      // จุดที่นิ้วจับ เทียบกับมุมขวาล่าง → มุมเลื่อนตามนิ้วแบบเกาะติด
-      drag.off = [r.right - drag.x0, r.bottom - drag.y0];
-      if (drag.dir < 0) drag.el.style.visibility = 'visible';
-    }
-    if (!drag.el) return;
-    const { w, h, r } = drag;
-    if (drag.dir > 0) {
-      const F = [Math.min(w, e.clientX - r.left + Math.min(drag.off[0], 40)), Math.min(h, e.clientY - r.top + Math.min(drag.off[1], 40))];
-      drag.F = F; curl(drag.el, flap(), F, w, h);
-    } else {
-      drag.p = Math.min(1, Math.max(0, dy / (h * 0.8))); curl(drag.el, flap(), prevPath(drag.p, w, h), w, h);
-    }
-  });
-  const up = () => {
-    if (!drag) return; const g = drag; drag = null;
-    if (g.moved) { root.dataset.jnNoClick = '1'; setTimeout(() => delete root.dataset.jnNoClick, 50); }
-    if (!g.el) return;
-    const keys = keysNow(), i = keys.indexOf(st.sel) + g.dir, { w, h } = g, step = F => curl(g.el, flap(), F, w, h);
-    if (g.dir > 0) {
-      const F = g.F || [w, h], far = (F[1] < h * 0.55 || F[0] < w * 0.35) && i < keys.length; // แผ่นสุดท้าย = คลี่กลับที่เดิม
-      if (far) animate(F, gone(w, h), 380, step, () => pick(keys[i]));
-      else animate(F, [w, h], 300, step, () => { g.el.style.clipPath = ''; flap().style.visibility = 'hidden'; });
-    } else {
-      const p0 = g.p || 0, fwd = p0 > 0.35, t0 = performance.now();
-      const tick = now => { const t = Math.min(1, (now - t0) / 340), p = p0 + ((fwd ? 1 : 0) - p0) * (1 - (1 - t) ** 3); step(prevPath(p, w, h));
-        if (t < 1) requestAnimationFrame(tick); else if (fwd) pick(keys[i]); else { g.el.style.visibility = ''; flap().style.visibility = 'hidden'; } };
-      requestAnimationFrame(tick);
-    }
-  };
-  root.addEventListener('pointerup', up); root.addEventListener('pointercancel', up);
+  // พับมุมขวาล่างขึ้นตามนิ้ว (บลูขอ 26 พ.ย. 2569) · ตัวพลิกอยู่ใน lib/page-curl.js (ใช้ร่วมกับหนึ่งวันหนึ่งภาพ)
+  const step = dir => { const k = keysNow(), i = k.indexOf(st.sel) + dir; return i >= 0 && i < k.length ? k[i] : null; };
+  const { go } = attachFlip({ root, stackSel: '[data-jn-swipe]', topSel: '.jn-top', prevSel: '.jn-prev', flapSel: '.jn-flap',
+    canGo: dir => !!step(dir), onGo: dir => pick(step(dir)) });
   root.addEventListener('click', e => {
     const tb = e.target.closest('[data-jn-tab]'); if (tb) { st.tab = tb.dataset.jnTab; rerender(); return; }
     const g = e.target.closest('[data-jn-go]'); if (g) return go(Number(g.dataset.jnGo));
-    if (e.target.closest('[data-jn-open]')) { if (!root.dataset.jnNoClick) openJournalSheet(st.sel, rerender); return; }
+    if (e.target.closest('[data-jn-open]')) { if (!root.dataset.flipNoClick) openJournalSheet(st.sel, rerender); return; }
     const nav = e.target.closest('[data-mc-nav]');
     if (nav) { const n = st.view.m + Number(nav.dataset.mcNav); st.view = { y: st.view.y + Math.floor(n / 12), m: (n + 12) % 12 }; rerender(); return; }
     const pk = e.target.closest('[data-mc-pick]')?.dataset.mcPick;

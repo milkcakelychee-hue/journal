@@ -2,6 +2,7 @@
 import { getData } from '../store.js';
 import { MONTHS, fromKey } from '../lib/date-th.js';
 import { photoURL, posStyle } from '../lib/photos.js';
+import { attachFlip, WHITE_BACK } from '../lib/page-curl.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const DAY_FULL = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
@@ -16,6 +17,8 @@ export function openPhotoSlide(y, m, startKey, onCalendar) {
   let i = Math.max(0, keys.indexOf(startKey));
   const el = document.createElement('div');
   el.className = 'ps-back'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'ดูแบบสไลด์');
+  // แสตมป์ 1 แผ่น · พลิกแบบพับมุมเหมือนบันทึก (บลูขอ 27 พ.ย. 2569)
+  const frame = (k, cls, attrs = '') => { const u = photoURL(k, render); return `<div class="sl-frame ${cls}"${attrs}><span class="stamp"></span>${u ? `<img src="${u}" alt=""${posStyle(k)}>` : ''}</div>`; };
   const render = () => {
     const k = keys[i], dt = fromKey(k), u = photoURL(k, render), note = getData().photos[k]?.note || '';
     const a = Math.max(0, Math.min(i - 3, keys.length - 8)), dots = keys.slice(a, a + 8).map((_, j) => `<i class="${a + j === i ? 'on' : ''}"></i>`).join('');
@@ -23,21 +26,24 @@ export function openPhotoSlide(y, m, startKey, onCalendar) {
       <div class="sl-top"><button type="button" class="sl-x" aria-label="ปิด" data-sl-close>${X}</button><span>${MONTHS[m]} ${y + 543} · ${i + 1} / ${keys.length}</span><span style="width:44px"></span></div>
       <div class="seg" style="margin-top:8px"><button type="button" class="seg-btn on" aria-pressed="true">สไลด์</button><button type="button" class="seg-btn" aria-pressed="false" data-sl-cal>ปฏิทิน</button></div>
       <div class="sl-day"><div class="sl-n">${dt.getDate()}</div><div class="sl-w">${DAY_FULL[dt.getDay()]}</div></div>
-      <div class="sl-frame" role="img" aria-label="ภาพ${DAY_FULL[dt.getDay()]}ที่ ${dt.getDate()} ${MONTHS[m]}" data-sl-swipe><span class="stamp"></span>${u ? `<img src="${u}" alt=""${posStyle(k)}>` : ''}</div>
+      <div class="sl-stack" data-sl-swipe>
+        ${keys[i + 1] ? frame(keys[i + 1], 'sl-under') : ''}
+        ${frame(k, 'sl-cur', ` role="img" aria-label="ภาพ${DAY_FULL[dt.getDay()]}ที่ ${dt.getDate()} ${MONTHS[m]}"`)}
+        ${i ? frame(keys[i - 1], 'sl-prev') : ''}
+        <div class="jn-flapw" aria-hidden="true"><div class="jn-flap"></div></div></div>
       ${note ? `<div class="sl-note">${esc(note)}</div>` : ''}
       <div class="sl-nav"><button type="button" class="sl-arrow" aria-label="วันก่อน" data-sl-go="-1"${i ? '' : ' disabled'}>${L}</button><span class="sl-dots">${dots}</span><button type="button" class="sl-arrow" aria-label="วันถัดไป" data-sl-go="1"${i < keys.length - 1 ? '' : ' disabled'}>${R}</button></div>
-      <div class="sl-hint">ปัดซ้าย-ขวาเพื่อดูวันอื่น</div></div>`;
+      <div class="sl-hint">ลากมุมขวาล่างขึ้นเพื่อดูวันถัดไป · ลากลงเพื่อย้อนกลับ</div></div>`;
   };
-  const go = n => { const j = i + n; if (j >= 0 && j < keys.length) { i = j; render(); } };
+  const ok = n => i + n >= 0 && i + n < keys.length;
+  const { go } = attachFlip({ root: el, stackSel: '[data-sl-swipe]', topSel: '.sl-cur', prevSel: '.sl-prev', flapSel: '.jn-flap', bg: WHITE_BACK,
+    canGo: ok, onGo: n => { i += n; render(); } });
   const close = () => { el.remove(); document.body.classList.remove('sh-open'); };
   el.addEventListener('click', e => {
     if (e.target.closest('[data-sl-close]')) close();
     else if (e.target.closest('[data-sl-cal]')) { close(); onCalendar?.(y, m, keys[i]); }
     else { const b = e.target.closest('[data-sl-go]'); if (b) go(Number(b.dataset.slGo)); }
   });
-  let x0 = null;
-  el.addEventListener('pointerdown', e => { if (e.target.closest('[data-sl-swipe]')) x0 = e.clientX; });
-  el.addEventListener('pointerup', e => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1); });
   render();
   document.body.appendChild(el); document.body.classList.add('sh-open');
 }
