@@ -65,6 +65,7 @@ export function createDefaultData() {
     symptoms: [],              // { id, name, categoryId }
     symptomArchive: [],
     symptomLog: [],            // { id, date, symptomId, note, time }
+    journal: {},               // { 'YYYY-MM-DD': { text, updatedAt } } บันทึกเครื่องพิมพ์ดีด วันละแผ่น
     photos: {},                // { 'YYYY-MM-DD': { note, updatedAt } } · ตัวภาพอยู่ใน store "photos" แยก
     updatedAt: 0,
   };

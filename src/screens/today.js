@@ -2,6 +2,7 @@ import { resetSidePhoto } from './side-photo.js';
 import { resetSideHealth } from './side-health.js';
 import { resetSideHabit } from './side-habit.js';
 import { openEventSheet } from './event-sheet.js';
+import { resetSideJournal } from './side-journal.js';
 import { openHolidaySheet, openWfhSheet, holidaysOn, isWfh } from './holiday-sheet.js';
 import { tagRow } from './calendar.js';
 // หน้าวันนี้ · บอร์ด Main
@@ -85,6 +86,7 @@ export function mountToday(root, rerender) {
     if (go === 'health') { resetSideHealth(); location.hash = 'sides/health'; return; }
     if (go === 'habit') { resetSideHabit(); location.hash = 'sides/habit'; return; }
     if (go === 'photo') { resetSidePhoto(); location.hash = 'sides/photo'; return; }
+    if (go === 'journal') { resetSideJournal(); location.hash = 'sides/journal'; return; }
     const ho = e.target.closest('[data-hol-open]')?.dataset.holOpen;
     if (ho) { openHolidaySheet(rerender, { id: ho }); return; }
     if (e.target.closest('[data-wfh-add]')) { openWfhSheet(rerender, todayKey()); return; }
