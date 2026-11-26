@@ -29,6 +29,6 @@ export function mountSides(root, rerender) {
     const b = e.target.closest('[data-side],[data-side-back]');
     if (!b) return;
     if (b.dataset.side && SUBS[b.dataset.side]) { SUBS[b.dataset.side][2](); location.hash = 'sides/' + b.dataset.side; }
-    else if (b.dataset.sideBack !== undefined) location.hash = 'sides';
+    else if (b.dataset.sideBack !== undefined) location.hash = location.hash.split('/')[2] === 'today' ? 'today' : 'sides'; // เปิดจากหน้าวันนี้ → กลับหน้าวันนี้
   });
 }

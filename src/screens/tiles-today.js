@@ -1,4 +1,7 @@
 // ป้ายในหน้าวันนี้ แถวละ 3 (บลูขอ 26 พ.ย. 2569) · บอร์ด Main (ป้ายเหมือนกันทุกสถานะ ไม่มีตัวเลข)
+import { getData } from '../store.js';
+import { todayKey, fromKey, toKey, addDays } from '../lib/date-th.js';
+import { isDue } from './side-habit.js';
 const ARROW = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 L17 7"/><path d="M8.5 7 H17 V15.5"/></svg>';
 const G = '#C9C9CE';
 const ICONS = {
@@ -17,6 +20,21 @@ const TILES = [
   { id: 'journal', label: 'บันทึก', go: 'journal' },
 ];
 
-export const renderTilesToday = () => `<section aria-label="บันทึกวันนี้"><div class="tl-grid tl3">${TILES.map(t =>
-  `<button type="button" class="tl" aria-label="${t.label}" data-go="${t.go}"><span class="tl-arrow">${ARROW}</span><span class="tl-ic">${ICONS[t.id]}</span><span class="tl-lb">${t.label}</span></button>`
-).join('')}</div></section>`;
+// ป้ายไหนยังต้องเข้าไปบันทึกวันนี้ → จุดเตือน (บลูขอ 26 พ.ย. 2569)
+// Habit: มีนิสัยที่อยากสร้างที่วันนี้ต้องทำแต่ยังไม่ติ๊ก (รายสัปดาห์: สัปดาห์นี้ยังไม่ครบ) · ภาพ/บันทึก: วันนี้ยังไม่มี
+function pending(d, go) {
+  const k = todayKey();
+  if (go === 'habit') return d.habits.some(h => {
+    if ((h.type || 'build') !== 'build' || !isDue(h, k) || d.habitLog[h.id]?.[k]) return false;
+    if (h.freq?.kind !== 'weekly') return true;
+    const t = fromKey(k), w0 = addDays(t, -((t.getDay() - d.settings.weekStart + 7) % 7));
+    let c = 0; for (let j = 0; j < 7; j++) if (d.habitLog[h.id]?.[toKey(addDays(w0, j))]) c++;
+    return c < (h.freq.per || 1);
+  });
+  if (go === 'photo') return !d.photos?.[k];
+  if (go === 'journal') return !d.journal?.[k];
+  return false;
+}
+
+export const renderTilesToday = () => { const d = getData(); return `<section aria-label="บันทึกวันนี้"><div class="tl-grid tl3">${TILES.map(t => { const p = pending(d, t.go);
+  return `<button type="button" class="tl" aria-label="${t.label}${p ? ' · วันนี้ยังไม่ได้บันทึก' : ''}" data-go="${t.go}">${p ? '<span class="tl-due" aria-hidden="true"></span>' : ''}<span class="tl-arrow">${ARROW}</span><span class="tl-ic">${ICONS[t.id]}</span><span class="tl-lb">${t.label}</span></button>`; }).join('')}</div></section>`; };

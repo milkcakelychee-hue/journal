@@ -24,7 +24,7 @@ export function renderSideJournal() {
   if (!keys.includes(st.sel)) st.sel = keys[0] || null;
   if (!st.view) { const t = fromKey(st.sel || todayKey()); st.view = { y: t.getFullYear(), m: t.getMonth() }; }
   const seg = (id, t) => `<button type="button" class="seg-btn${st.tab === id ? ' on' : ''}" aria-pressed="${st.tab === id}" data-jn-tab="${id}">${t}</button>`;
-  const head = `<button type="button" class="side-back" data-side-back>${BACK}แยกด้าน</button><h1 class="h-page side-title">บันทึก</h1>
+  const head = `<button type="button" class="side-back" data-side-back>${BACK}${location.hash.split('/')[2] === 'today' ? 'วันนี้' : 'แยกด้าน'}</button><h1 class="h-page side-title">บันทึก</h1>
     <div class="seg" style="margin:0">${seg('write', 'เขียน')}${seg('file', `แฟ้ม${keys.length ? ` · ${keys.length}` : ''}`)}</div>`;
   if (st.tab === 'write') return `<div class="side">${head}${renderTypewriter()}</div>`;
   if (!keys.length) return `<div class="side">${head}<div class="ip-empty">ยังไม่มีบันทึก</div></div>`;
@@ -97,7 +97,7 @@ export function mountSideJournal(root, rerender) {
     if (!g.el) return;
     const keys = keysNow(), i = keys.indexOf(st.sel) + g.dir, { w, h } = g, step = F => curl(g.el, flap(), F, w, h);
     if (g.dir > 0) {
-      const F = g.F || [w, h], far = F[1] < h * 0.55 || F[0] < w * 0.35;
+      const F = g.F || [w, h], far = (F[1] < h * 0.55 || F[0] < w * 0.35) && i < keys.length; // แผ่นสุดท้าย = คลี่กลับที่เดิม
       if (far) animate(F, gone(w, h), 380, step, () => pick(keys[i]));
       else animate(F, [w, h], 300, step, () => { g.el.style.clipPath = ''; flap().style.visibility = 'hidden'; });
     } else {

@@ -100,7 +100,7 @@ export function renderSideHealth() {
   const d = getData();
   const seg = id => `<button type="button" class="seg-btn${st.view === id ? ' on' : ''}" aria-pressed="${st.view === id}" data-hl-view="${id}">${id === 'month' ? 'เดือน' : 'ปี'}</button>`;
   return `<div class="side">
-    <button type="button" class="side-back" data-side-back>${BACK}แยกด้าน</button>
+    <button type="button" class="side-back" data-side-back>${BACK}${location.hash.split('/')[2] === 'today' ? 'วันนี้' : 'แยกด้าน'}</button>
     <h1 class="h-page side-title">สุขภาพ</h1>
     <div class="seg" style="margin:0">${seg('month')}${seg('year')}</div>
     ${st.view === 'month' ? `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="เดือนก่อน" data-hl-month="-1">${L}</button>

@@ -172,7 +172,7 @@ export function renderSideHabit() {
   const d = getData();
   const seg = id => `<button type="button" class="seg-btn${st.view === id ? ' on' : ''}" aria-pressed="${st.view === id}" data-hb-view="${id}">${id === 'month' ? 'เดือน' : 'ปี'}</button>`;
   return `<div class="side">
-    <button type="button" class="side-back" data-side-back>${BACK}แยกด้าน</button>
+    <button type="button" class="side-back" data-side-back>${BACK}${location.hash.split('/')[2] === 'today' ? 'วันนี้' : 'แยกด้าน'}</button>
     <div class="hb-titlebar"><h1 class="h-page">Habit</h1><button type="button" class="hb-add" aria-label="สร้าง Habit" data-hb-new>${PLUS}</button></div>
     <div class="seg" style="margin:0">${seg('month')}${seg('year')}</div>
     ${st.view === 'month' ? `<div class="sm-nav"><button type="button" class="cal-arrow" aria-label="เดือนก่อน" data-hb-month="-1">${L}</button>

@@ -71,7 +71,10 @@ export function renderToday() {
   </div>`;
 }
 
+// กลับจากหน้าย่อย → เลื่อนไปตำแหน่งเดิมของหน้าวันนี้ (บลูขอ 26 พ.ย. 2569)
+let backY = null;
 export function mountToday(root, rerender) {
+  if (backY != null) { const y = backY; backY = null; requestAnimationFrame(() => scrollTo(0, y)); }
   const slot = () => root.querySelector('#todo-slot');
   bindTodo(root, () => { slot().innerHTML = renderTodoCard(); });
   // บันทึกอารมณ์แล้ว แถบสัปดาห์ด้านบนต้องเปลี่ยนสีจุดด้วย → วาดทั้งหน้าใหม่
@@ -80,13 +83,14 @@ export function mountToday(root, rerender) {
     const wk = root.querySelector('.wk'); if (wk) wk.outerHTML = weekStrip(getData());
   });
   root.addEventListener('click', e => {
+    if (e.target.closest('[data-go],a[href$="/today"]')) backY = scrollY;
     const go = e.target.closest('[data-go]')?.dataset.go;
     const redrawQn = () => { root.querySelector('#qn-slot').innerHTML = renderQuickNotesToday(); };
     if (go === 'quicknote') openQuickNote(redrawQn);
-    if (go === 'health') { resetSideHealth(); location.hash = 'sides/health'; return; }
-    if (go === 'habit') { resetSideHabit(); location.hash = 'sides/habit'; return; }
-    if (go === 'photo') { resetSidePhoto(); location.hash = 'sides/photo'; return; }
-    if (go === 'journal') { resetSideJournal(); location.hash = 'sides/journal'; return; }
+    if (go === 'health') { resetSideHealth(); location.hash = 'sides/health/today'; return; }
+    if (go === 'habit') { resetSideHabit(); location.hash = 'sides/habit/today'; return; }
+    if (go === 'photo') { resetSidePhoto(); location.hash = 'sides/photo/today'; return; }
+    if (go === 'journal') { resetSideJournal(); location.hash = 'sides/journal/today'; return; }
     const ho = e.target.closest('[data-hol-open]')?.dataset.holOpen;
     if (ho) { openHolidaySheet(rerender, { id: ho }); return; }
     if (e.target.closest('[data-wfh-add]')) { openWfhSheet(rerender, todayKey()); return; }

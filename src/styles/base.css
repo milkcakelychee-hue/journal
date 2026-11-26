@@ -989,3 +989,4 @@ button.smc-day { border: 0; background: none; padding: 0; width: 100%; font-fami
 .tw-done .btn-secondary { width: auto; padding: 0 22px; height: 40px; font-size: 15px; font-family: inherit; }
 .jn-stack > .jn-top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14px; background: linear-gradient(transparent, rgba(0,0,0,.04)); pointer-events: none; } /* ปลายกระดาษให้รู้ว่าลากได้ */
 .jn-flapw { position: absolute; inset: 0; pointer-events: none; z-index: 3; filter: drop-shadow(-3px -2px 6px rgba(60,45,20,.28)); }
+.tl-due { position: absolute; top: 12px; left: 12px; width: 10px; height: 10px; border-radius: 5px; background: #F2994A; box-shadow: 0 0 0 2px #fff; }

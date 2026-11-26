@@ -79,7 +79,7 @@ export function renderSidePhoto() {
   if (st.sel === null && d.photos[todayKey()]) st.sel = todayKey();
   const seg = id => `<button type="button" class="seg-btn${st.view === id ? ' on' : ''}" aria-pressed="${st.view === id}" data-ph-view="${id}">${id === 'month' ? 'เดือน' : 'ปี'}</button>`;
   return `<div class="side">
-    <button type="button" class="side-back" data-side-back>${BACK}แยกด้าน</button>
+    <button type="button" class="side-back" data-side-back>${BACK}${location.hash.split('/')[2] === 'today' ? 'วันนี้' : 'แยกด้าน'}</button>
     <h1 class="h-page side-title">หนึ่งวันหนึ่งภาพ</h1>
     <div class="seg" style="margin:0">${seg('month')}${seg('year')}</div>
     ${st.view === 'month' ? monthView(d) : yearView(d)}
