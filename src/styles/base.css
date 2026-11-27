@@ -1015,7 +1015,7 @@ button.smc-day { border: 0; background: none; padding: 0; width: 100%; font-fami
 .pp-grid { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(90deg, #DCE3EA 1px, transparent 1px) 0 0 / 16px 16px, linear-gradient(#DCE3EA 1px, transparent 1px) 0 0 / 16px 16px, #F7F6F1; }
 .pp-dot { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(circle, #C9C2B4 1.1px, transparent 1.5px) 0 0 / 14px 14px, #F6F2EA; }
 .pp-kraft { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)'/%3E%3C/svg%3E"), #C9A57A; }
-.pp-green { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), #8FC58A; }
+.pp-color { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"), var(--pc, #8FC58A); }
 .jj-papers { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 8px; flex: none; }
 .jj-pp { flex: none; border: 0; background: none; padding: 0; font: inherit; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .jj-pp span { width: 52px; height: 39px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
@@ -1113,3 +1113,27 @@ button.smc-day { border: 0; background: none; padding: 0; width: 100%; font-fami
 .yb-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); border-radius: 4px; }
 .yb-row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--ink); }
 .yb-row span:last-child { color: var(--muted); }
+/* หัวกระดาษ Junk journal (บลูขอ 27 พ.ย. 2569) · ขนาดตามหน้า (cqw) */
+.jj-head-pp { position: absolute; left: 5%; right: 5%; top: 4%; font-size: 3.4cqw; color: #3A3A3C; pointer-events: none; }
+.jj-hr { display: flex; align-items: center; gap: 1.2cqw; padding: .6cqw 0; border-bottom: 1px solid rgba(0,0,0,.45); }
+.jj-ht { border-bottom-color: rgba(0,0,0,.25); min-height: 5.6cqw; }
+.jj-hl { font-family: Georgia, 'Times New Roman', serif; font-style: italic; color: #6E6A63; width: 8cqw; flex: none; }
+.jj-hd { position: relative; pointer-events: auto; }
+.jj-hd input { position: absolute; inset: 0; opacity: 0; width: 100%; }
+.jj-hw { margin-left: auto; display: flex; gap: .4cqw; }
+.jj-hw span { width: 5cqw; height: 5cqw; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.6cqw; color: #8E8E93; }
+.jj-hw span.on { background: #C7D7F2; color: #1C1C1E; }
+.jj-htx { flex: 1; min-width: 0; pointer-events: auto; outline: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jj-thumb .jj-htx, .jj-thumb .jj-hd { pointer-events: none; }
+.jj-htx[contenteditable] { font-size: max(16px, 3.4cqw); white-space: normal; background: rgba(255,255,255,.5); }
+.jj-htx:empty::before { content: 'แตะเพื่อใส่หัวข้อ'; color: rgba(0,0,0,.28); }
+.jj-thumb .jj-htx:empty::before { content: ''; }
+.jj-headsw { width: 52px; height: 39px; border-radius: 4px; background: #F4EFE4; box-shadow: 0 0 0 1px rgba(0,0,0,.08); position: relative; display: block; }
+.jj-headsw::before, .jj-headsw::after { content: ''; position: absolute; left: 5px; right: 5px; height: 1px; background: rgba(0,0,0,.25); }
+.jj-headsw::before { top: 9px; } .jj-headsw::after { top: 16px; }
+.jj-headsw.on { box-shadow: 0 0 0 2px var(--ink); }
+
+.jj-pp { position: relative; }
+.jj-pp input[type=color] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.jj-wheel { position: relative; }
+.jj-wheel::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); box-shadow: 0 0 0 1.5px #fff; }

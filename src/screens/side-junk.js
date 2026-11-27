@@ -2,7 +2,7 @@
 // ชิ้นงานวางด้วยสัดส่วนของหน้า (%) → รูปย่อในรายการ = markup เดียวกับหน้าแก้ ขนาดต่างกันได้
 import { getData, update } from '../store.js';
 import { newId } from '../defaults.js';
-import { DAYS_SHORT, MONTHS_SHORT } from '../lib/date-th.js';
+import { DAYS_SHORT, MONTHS_SHORT, toKey, fromKey, be } from '../lib/date-th.js';
 import { photoURL, savePhoto, removePhoto } from '../lib/photos.js';
 import { confirmDelete } from '../ui/confirm.js';
 
@@ -49,8 +49,17 @@ function itemHtml(it, sel, editing) {
   return `<div class="jj-it jj-img${sel ? ' sel' : ''}" data-jj-it="${it.id}" style="left:${it.x * 100}%;top:${it.y * 100}%;width:${it.w * 100}%;aspect-ratio:${cw / (ch * it.ar)};transform:translate(-50%,-50%) rotate(${it.r}deg)"><span class="jj-clip">${u ? `<img src="${u}" alt="" draggable="false" style="${im}">` : ''}</span>${sel ? HANDLE : ''}</div>`;
 }
 // กระดาษ (บลูขอ 26 พ.ย. 2569) · texture วาดด้วย CSS ไม่ต้องโหลดรูป
-export const PAPERS = [['cream', 'ครีม'], ['lined', 'มีเส้น'], ['grid', 'ตาราง'], ['dot', 'จุด'], ['kraft', 'คราฟต์'], ['green', 'เขียว']];
-const pageHtml = (pg, sel = null, editing = null) => `<div class="jj-page pp-${pg.paper || 'cream'}">${pg.items.map(it => itemHtml(it, it.id === sel, it.id === editing)).join('')}</div>`;
+export const PAPERS = [['cream', 'ครีม'], ['lined', 'มีเส้น'], ['grid', 'ตาราง'], ['dot', 'จุด'], ['kraft', 'คราฟต์'], ['color', 'เลือกสี']]; // 'เลือกสี' = วงล้อสี (บลูขอ 27 พ.ย. 2569) แทนสีเขียว
+// หัวกระดาษแบบรูปที่บลูส่ง (27 พ.ย. 2569): วันที่ · วันในสัปดาห์วงวันนั้น · หัวข้อ · ขนาดเป็น % ของหน้า
+function headHtml(pg, editing, live) {
+  const h = pg.head; if (!h?.on) return '';
+  const k = h.date || toKey(new Date(pg.createdAt)), t = fromKey(k), ws = getData().settings.weekStart ?? 1;
+  const days = Array.from({ length: 7 }, (_, i) => (ws + i) % 7).map(d => `<span class="${d === t.getDay() ? 'on' : ''}">${DAYS_SHORT[d]}</span>`).join('');
+  const date = `${t.getDate()} ${MONTHS_SHORT[t.getMonth()]} ${String(be(t.getFullYear())).slice(-2)}`;
+  return `<div class="jj-head-pp"><div class="jj-hr"><span class="jj-hl">date</span>${live ? `<label class="jj-hd">${date}<input type="date" value="${k}" data-jj-hdate aria-label="วันที่หัวกระดาษ"></label>` : `<span class="jj-hd">${date}</span>`}<span class="jj-hw">${days}</span></div>
+    <div class="jj-hr jj-ht"><span class="jj-hl">topic</span><span class="jj-htx"${editing ? ' contenteditable="true" data-jj-nt' : ''}${live ? ' data-jj-topic' : ''} aria-label="หัวข้อ">${escT(h.topic || '')}</span></div></div>`;
+}
+const pageHtml = (pg, sel = null, editing = null, live = false) => `<div class="jj-page pp-${pg.paper === 'green' ? 'color' : pg.paper || 'cream'}"${pg.paper === 'color' || pg.paper === 'green' ? ` style="--pc:${pg.paperColor || '#8FC58A'}"` : ''}>${headHtml(pg, editing === 'topic', live)}${pg.items.map(it => itemHtml(it, it.id === sel, it.id === editing)).join('')}</div>`;
 
 export function renderSideJunk() {
   const d = getData(), pages = [...(d.junk || [])].reverse(); // ใหม่สุดก่อน
@@ -126,15 +135,17 @@ function openEditor(id, onDone) {
       ${it.hl ? `<label class="jj-tbtn"><i class="jj-sw" style="background:${it.hl}"></i><small>สีไฮไลต์</small><input type="color" value="${it.hl}" data-jj-hcolor></label>` : ''}</div>`; };
   const pick = () => picking === 'pen' ? `<div class="jj-papers jj-pens">${PEN_SIZES.map(([z, t]) => `<button type="button" class="jj-pz${pen.size === z ? ' on' : ''}" aria-label="เส้น${t}" aria-pressed="${pen.size === z}" data-jj-pz="${z}"><i style="width:${z * 1.4 + 4}px;height:${z * 1.4 + 4}px;background:${pen.color}"></i></button>`).join('')}<span class="jj-sep"></span>${PEN_COLORS.map(c => `<button type="button" class="jj-pc${pen.color === c ? ' on' : ''}" aria-label="สี ${c}" aria-pressed="${pen.color === c}" data-jj-pc="${c}"><i style="background:${c}"></i></button>`).join('')}</div>`
     : picking === 'note' ? `<div class="jj-papers">${NOTES.map(([k, c, t]) => `<button type="button" class="jj-pp" data-jj-nc="${k}"><span style="background:${c}"></span>${t}</button>`).join('')}</div>`
-    : picking === 'paper' ? `<div class="jj-papers">${PAPERS.map(([k, t]) => `<button type="button" class="jj-pp${(pg.paper || 'cream') === k ? ' on' : ''}" aria-pressed="${(pg.paper || 'cream') === k}" data-jj-pp="${k}"><span class="pp-${k}"></span>${t}</button>`).join('')}</div>` : '';
+    : picking === 'paper' ? `<div class="jj-papers"><button type="button" class="jj-pp" aria-pressed="${!!pg.head?.on}" data-jj-head><span class="jj-headsw${pg.head?.on ? ' on' : ''}"></span>หัวกระดาษ</button><span class="jj-sep"></span>${PAPERS.map(([k, t]) => k === 'color'
+      ? `<label class="jj-pp${['color', 'green'].includes(pg.paper) ? ' on' : ''}"><span class="pp-color jj-wheel" style="--pc:${pg.paperColor || '#8FC58A'}"></span>${t}<input type="color" value="${pg.paperColor || '#8FC58A'}" data-jj-pcolor aria-label="เลือกสีพื้นหลัง"></label>`
+      : `<button type="button" class="jj-pp${(pg.paper || 'cream') === k ? ' on' : ''}" aria-pressed="${(pg.paper || 'cream') === k}" data-jj-pp="${k}"><span class="pp-${k}"></span>${t}</button>`).join('')}</div>` : '';
   const draw = () => {
-    ed.innerHTML = `${bar()}<div class="jj-stage" data-jj-stage>${pageHtml(pg, sel, editing)}</div>${old ? '<button type="button" class="jj-tb jj-danger jj-delp" data-jj-delpage>ลบหน้านี้</button>' : ''}${pick() || textBar()}${tools()}${toast ? `<div class="jj-toast" role="status">${toast}</div>` : ''}`;
+    ed.innerHTML = `${bar()}<div class="jj-stage" data-jj-stage>${pageHtml(pg, sel, editing, true)}</div>${old ? '<button type="button" class="jj-tb jj-danger jj-delp" data-jj-delpage>ลบหน้านี้</button>' : ''}${pick() || textBar()}${tools()}${toast ? `<div class="jj-toast" role="status">${toast}</div>` : ''}`;
     applyView();
     const nt = ed.querySelector('[data-jj-nt]'); if (nt) { nt.focus(); const rg = document.createRange(); rg.selectNodeContents(nt); rg.collapse(false); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg); }
   };
   const say = t => { toast = t; draw(); setTimeout(() => { toast = ''; if (ed.isConnected) draw(); }, 2200); };
   // จบการพิมพ์โพสต์อิท → เก็บข้อความ
-  const stopEdit = () => { if (!editing) return; const nt = ed.querySelector('[data-jj-nt]'), it = pg.items.find(x => x.id === editing); if (nt && it) it.text = nt.innerText.trim(); if (it?.kind === 'text' && !it.text) { pg.items = pg.items.filter(x => x !== it); sel = null; } editing = null; dirty = true; };
+  const stopEdit = () => { if (!editing) return; if (editing === 'topic') { const nt = ed.querySelector('[data-jj-nt]'); if (nt) pg.head.topic = nt.innerText.trim(); editing = null; dirty = true; return; } const nt = ed.querySelector('[data-jj-nt]'), it = pg.items.find(x => x.id === editing); if (nt && it) it.text = nt.innerText.trim(); if (it?.kind === 'text' && !it.text) { pg.items = pg.items.filter(x => x !== it); sel = null; } editing = null; dirty = true; };
   redraw = () => { draw(); };
   draw();
   document.body.append(ed); document.body.classList.add('sh-open');
@@ -162,6 +173,8 @@ function openEditor(id, onDone) {
   };
   // วงล้อสี: เปลี่ยนสีสด ๆ ระหว่างเลือก
   ed.addEventListener('input', e => {
+    const pcl = e.target.closest('[data-jj-pcolor]');
+    if (pcl) { pg.paper = 'color'; pg.paperColor = pcl.value; dirty = true; const pe = ed.querySelector('.jj-stage .jj-page'); pe.className = 'jj-page pp-color'; pe.style.setProperty('--pc', pcl.value); pcl.previousElementSibling.style.setProperty('--pc', pcl.value); ed.querySelectorAll('.jj-papers .jj-pp.on').forEach(x => x.classList.remove('on')); pcl.parentElement.classList.add('on'); return; }
     const tc = e.target.closest('[data-jj-tcolor],[data-jj-hcolor]'); if (!tc) return;
     const it = pg.items.find(x => x.id === sel); if (!it) return;
     const el = ed.querySelector(`[data-jj-it="${it.id}"] .jj-tt`);
@@ -169,7 +182,8 @@ function openEditor(id, onDone) {
     else { it.hl = it.lastHl = tc.value; el.style.setProperty('--hl', tc.value); }
     tc.previousElementSibling.previousElementSibling.style.background = tc.value; dirty = true;
   });
-  ed.addEventListener('change', e => { const f = e.target.closest('[data-jj-file]')?.files?.[0]; if (f) addImage(f); });
+  ed.addEventListener('change', e => {
+    const hd = e.target.closest('[data-jj-hdate]'); if (hd) { if (hd.value) { pg.head.date = hd.value; dirty = true; draw(); } return; } const f = e.target.closest('[data-jj-file]')?.files?.[0]; if (f) addImage(f); });
   // วางรูปจากคลิปบอร์ด (เช่น ยกวัตถุจากแอปรูปภาพ → คัดลอก) · iOS จะเด้งปุ่ม "วาง" ให้ยืนยันอีกครั้ง
   const paste = async () => {
     try {
@@ -214,6 +228,7 @@ function openEditor(id, onDone) {
       const it = { id: newId(), kind: 'note', color: nc.dataset.jjNc, text: '', x: 0.5, y: 0.45, w: 0.3, r: (Math.random() - 0.5) * 6 };
       pg.items.push(it); sel = editing = it.id; picking = false; draw(); return;
     }
+    if (e.target.closest('[data-jj-head]')) { pg.head = { ...(pg.head || {}), on: !pg.head?.on }; dirty = true; draw(); return; }
     const pp = e.target.closest('[data-jj-pp]'); if (pp) { pg.paper = pp.dataset.jjPp; dirty = true; draw(); return; }
     if (e.target.closest('[data-jj-del]')) {
       const it = pg.items.find(x => x.id === sel);
@@ -239,6 +254,8 @@ function openEditor(id, onDone) {
   ed.addEventListener('pointerdown', e => {
     if (!e.target.closest('[data-jj-stage]')) return;
     if (editing) { if (e.target.closest('[data-jj-nt]')) return; stopEdit(); draw(); return; } // แตะนอกโพสต์อิท = พิมพ์เสร็จ
+    if (e.target.closest('[data-jj-topic]') && picking !== 'pen') { sel = null; editing = 'topic'; draw(); return; }
+    if (e.target.closest('[data-jj-hdate]')) return; // เปิดตัวเลือกวันที่ของระบบ
     if (picking === 'pen' && !vpts.size) { // โหมดปากกา
       if (stroke) { // นิ้วที่สองลง = เลิกวาด ไปซูมแทน
         stroke.el.remove(); const first = stroke.first; stroke = null;
