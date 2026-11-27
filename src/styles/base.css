@@ -1137,3 +1137,13 @@ button.smc-day { border: 0; background: none; padding: 0; width: 100%; font-fami
 .jj-pp input[type=color] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 .jj-wheel { position: relative; }
 .jj-wheel::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); box-shadow: 0 0 0 1.5px #fff; }
+/* Junk journal: เล่มหมุนเรียงเป็นวง (บลูขอ 27 พ.ย. 2569) */
+.jj-cf { position: relative; height: calc(min(100vw, 600px) * .62 * .75 + 48px); margin: 8px calc(-1 * var(--gutter)) 0; perspective: 900px; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.jj-cfi { position: absolute; left: 19%; top: 20px; width: 62%; border: 0; padding: 0; background: none; cursor: pointer; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.jj-cfi .jj-page { pointer-events: none; }
+.jj-cfi .jj-page { box-shadow: 0 0 0 .5px rgba(0,0,0,.08), 0 10px 24px rgba(0,0,0,.14); }
+.jj-cf-cap { display: flex; justify-content: center; gap: 10px; font-size: 14px; margin-top: 4px; }
+.jj-cf-n { color: var(--muted); }
+.jj-cf-cap { align-items: center; justify-content: space-between; }
+.jj-cf-mid { display: flex; gap: 10px; }
+.jj-cf { touch-action: auto; }

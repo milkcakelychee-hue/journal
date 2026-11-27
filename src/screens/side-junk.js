@@ -24,10 +24,12 @@ function smooth(p) {
   for (let i = 1; i < p.length - 1; i++) d += ` Q${p[i][0]} ${p[i][1]} ${(p[i][0] + p[i + 1][0]) >> 1} ${(p[i][1] + p[i + 1][1]) >> 1}`;
   const z = p[p.length - 1]; return d + ` L${z[0]} ${z[1]}`;
 }
+const L_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6 L8.5 12 L14.5 18"/></svg>';
+const R_IC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6 L15.5 12 L9.5 18"/></svg>';
 const TRASH = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7 H19.5"/><path d="M9.5 7 V4.5 H14.5 V7"/><path d="M6.5 7 L7.5 20 H16.5 L17.5 7"/></svg>';
 
 let redraw = () => {};
-export const resetSideJunk = () => {};
+export const resetSideJunk = () => { lst.idx = 0; };
 
 // ---------- วาดหน้า (ใช้ทั้งรูปย่อและหน้าแก้) ----------
 // โพสต์อิท 4 สี (บลูขอ 26 พ.ย. 2569)
@@ -61,24 +63,57 @@ function headHtml(pg, editing, live) {
 }
 const pageHtml = (pg, sel = null, editing = null, live = false) => `<div class="jj-page pp-${pg.paper === 'green' ? 'color' : pg.paper || 'cream'}"${pg.paper === 'color' || pg.paper === 'green' ? ` style="--pc:${pg.paperColor || '#8FC58A'}"` : ''}>${headHtml(pg, editing === 'topic', live)}${pg.items.map(it => itemHtml(it, it.id === sel, it.id === editing)).join('')}</div>`;
 
+// รายการหน้า: "เล่ม" = เรียงหมุนเป็นวง (coverflow แบบรูปที่บลูส่ง 27 พ.ย. 2569) · "ตาราง" = รูปย่อเรียงลงมา
+const lst = { view: 'book', idx: 0 };
+const thumbDate = pg => { const t = new Date(pg.createdAt); return `${DAYS_SHORT[t.getDay()]} ${t.getDate()} ${MONTHS_SHORT[t.getMonth()]}`; };
 export function renderSideJunk() {
   const d = getData(), pages = [...(d.junk || [])].reverse(); // ใหม่สุดก่อน
   const back = location.hash.split('/')[2] === 'today' ? 'วันนี้' : 'แยกด้าน';
+  lst.idx = Math.min(lst.idx, Math.max(0, pages.length - 1));
+  const seg = (id, t) => `<button type="button" class="seg-btn${lst.view === id ? ' on' : ''}" aria-pressed="${lst.view === id}" data-jj-view="${id}">${t}</button>`;
+  const body = !pages.length ? '<div class="ip-empty">ยังไม่มีหน้า กด + เพื่อเริ่มหน้าแรก</div>'
+    : lst.view === 'grid' ? `<div class="jj-grid">${pages.map(pg => `<button type="button" class="jj-thumb" aria-label="เปิดหน้า ${thumbDate(pg)}" data-jj-open="${pg.id}">${pageHtml(pg)}<span class="jj-date">${thumbDate(pg)}</span></button>`).join('')}</div>`
+    : `<div class="jj-cf" data-jj-cf>${pages.map((pg, i) => `<button type="button" class="jj-cfi" data-jj-cfi="${i}" data-id="${pg.id}" aria-label="หน้า ${thumbDate(pg)}">${pageHtml(pg)}</button>`).join('')}</div>
+      <div class="jj-cf-cap"><button type="button" class="cal-arrow" aria-label="หน้าก่อน" data-jj-cfgo="-1">${L_IC}</button><span class="jj-cf-mid"><span data-jj-cfd>${thumbDate(pages[lst.idx])}</span><span class="jj-cf-n" data-jj-cfn>${lst.idx + 1} / ${pages.length}</span></span><button type="button" class="cal-arrow" aria-label="หน้าถัดไป" data-jj-cfgo="1">${R_IC}</button></div>`;
   return `<div class="side">
     <button type="button" class="side-back" data-side-back>${BACK}${back}</button>
     <div class="jj-head"><h1 class="h-page side-title" style="margin:0">Junk journal</h1>
       <button type="button" class="mo-add" aria-label="เพิ่มหน้าใหม่" data-jj-new>${PLUS}</button></div>
-    ${pages.length ? `<div class="jj-grid">${pages.map(pg => { const t = new Date(pg.createdAt); return `<button type="button" class="jj-thumb" aria-label="เปิดหน้า ${t.getDate()} ${MONTHS_SHORT[t.getMonth()]}" data-jj-open="${pg.id}">${pageHtml(pg)}<span class="jj-date">${DAYS_SHORT[t.getDay()]} ${t.getDate()} ${MONTHS_SHORT[t.getMonth()]}</span></button>`; }).join('')}</div>`
-      : '<div class="ip-empty">ยังไม่มีหน้า กด + เพื่อเริ่มหน้าแรก</div>'}
+    ${pages.length ? `<div class="seg" style="margin:0">${seg('book', 'เล่ม')}${seg('grid', 'ตาราง')}</div>` : ''}
+    ${body}
   </div>`;
 }
-
 export function mountSideJunk(root, rerender) {
   redraw = rerender;
+  const pages = () => [...(getData().junk || [])].reverse();
+  // วางแต่ละหน้าตามระยะจากหน้ากลาง: กลาง = ตรง · ข้าง ๆ = หมุนเอียงซ้อนกันเป็นวง
+  let pos = lst.idx;
+  const layout = (anim = true) => {
+    const items = root.querySelectorAll('[data-jj-cfi]'); if (!items.length) return;
+    items.forEach(el => {
+      const o = +el.dataset.jjCfi - pos, a = Math.abs(o), sg = Math.sign(o);
+      const x = a < 1 ? o * 62 : sg * (62 + (a - 1) * 16), rot = -Math.max(-1, Math.min(1, o)) * 58, z = -Math.min(a, 1) * 120 - Math.max(0, a - 1) * 30;
+      el.style.transition = anim ? 'transform .45s cubic-bezier(.16,1,.3,1), opacity .45s' : 'none';
+      el.style.transform = `translateX(${x}%) translateZ(${z}px) rotateY(${rot}deg)`;
+      el.style.zIndex = 100 - Math.round(a * 10); el.style.opacity = a > 5 ? 0 : 1;
+      el.tabIndex = Math.round(o) === 0 ? 0 : -1;
+    });
+    const ps = pages(), i = Math.round(Math.max(0, Math.min(ps.length - 1, pos)));
+    const dd = root.querySelector('[data-jj-cfd]'), nn = root.querySelector('[data-jj-cfn]');
+    if (dd) dd.textContent = thumbDate(ps[i]); if (nn) nn.textContent = `${i + 1} / ${ps.length}`;
+  };
+  const snap = i => { lst.idx = pos = Math.max(0, Math.min(pages().length - 1, i)); layout(); };
+  layout(false);
+  // เลื่อนด้วยปุ่ม ‹ › (บลูขอ 27 พ.ย. 2569 · ไม่ใช้การลาก)
   root.addEventListener('click', e => {
     if (e.target.closest('[data-jj-new]')) return openEditor(null, rerender);
+    const v = e.target.closest('[data-jj-view]'); if (v) { lst.view = v.dataset.jjView; rerender(); return; }
+    const cg = e.target.closest('[data-jj-cfgo]'); if (cg) { snap(lst.idx + Number(cg.dataset.jjCfgo)); return; }
+    const ci = e.target.closest('[data-jj-cfi]');
+    if (ci) { const i = +ci.dataset.jjCfi; if (i !== lst.idx) snap(i); else openEditor(ci.dataset.id, rerender); return; }
     const o = e.target.closest('[data-jj-open]'); if (o) openEditor(o.dataset.jjOpen, rerender);
   });
+  root.addEventListener('keydown', e => { if (!root.querySelector('[data-jj-cf]')) return; if (e.key === 'ArrowLeft') snap(lst.idx - 1); if (e.key === 'ArrowRight') snap(lst.idx + 1); });
 }
 
 // ---------- ย่อรูป: มีพื้นโปร่งใส = PNG ด้านยาว 800 · ไม่มี = JPEG 80% ด้านยาว 1200 ----------
@@ -102,6 +137,7 @@ async function prepImage(file) {
 
 // ---------- หน้าแก้ (เต็มจอ ไม่ใช่ sheet) ----------
 function openEditor(id, onDone) {
+  if (!id) lst.idx = 0; // หน้าใหม่ = อยู่หน้าแรกของเล่ม
   const d = getData(), old = id ? d.junk.find(p => p.id === id) : null;
   const pg = old ? structuredClone(old) : { id: newId(), createdAt: Date.now(), items: [] };
   let sel = null;
