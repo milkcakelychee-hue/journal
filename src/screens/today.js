@@ -60,10 +60,10 @@ function importantSection(d) {
 function yearBar() {
   const t = new Date(), y = t.getFullYear(), total = (new Date(y + 1, 0, 1) - new Date(y, 0, 1)) / 864e5;
   const day = Math.round((new Date(y, t.getMonth(), t.getDate()) - new Date(y, 0, 1)) / 864e5) + 1, left = total - day;
-  const pct = day / total * 100, leftPct = Math.round(left / total * 100);
-  return `<div class="yb" role="img" aria-label="วันนี้วันที่ ${day} จาก ${total} วันของปี เหลือ ${left} วัน ${leftPct}%">
+  const pct = day / total * 100, donePct = Math.round(pct);
+  return `<div class="yb" role="img" aria-label="วันนี้วันที่ ${day} จาก ${total} วันของปี ผ่านไป ${donePct}% เหลืออีก ${left} วัน">
     <div class="yb-bar"><i style="width:${pct}%"></i></div>
-    <div class="yb-row"><span>วันที่ ${day} / ${total}</span><span>เหลืออีก ${left} วันจะหมดปีนี้ · ${leftPct}%</span></div></div>`;
+    <div class="yb-row"><span>วันที่ ${day} / ${total} · ผ่านไป ${donePct}%</span><span>เหลืออีก ${left} วันจะหมดปีนี้</span></div></div>`;
 }
 
 export function renderToday() {
