@@ -56,11 +56,22 @@ function importantSection(d) {
   </section>`;
 }
 
+// หลอดเวลาปี (บลูขอ 27 พ.ย. 2569) · ส่วนที่ผ่านไป = เส้นทึบ · ที่เหลือ = เส้นประ · กว้างเท่าแถบ 7 วัน
+function yearBar() {
+  const t = new Date(), y = t.getFullYear(), total = (new Date(y + 1, 0, 1) - new Date(y, 0, 1)) / 864e5;
+  const day = Math.round((new Date(y, t.getMonth(), t.getDate()) - new Date(y, 0, 1)) / 864e5) + 1, left = total - day;
+  const pct = day / total * 100, leftPct = Math.round(left / total * 100);
+  return `<div class="yb" role="img" aria-label="วันนี้วันที่ ${day} จาก ${total} วันของปี เหลือ ${left} วัน ${leftPct}%">
+    <div class="yb-bar"><i style="width:${pct}%"></i></div>
+    <div class="yb-row"><span>วันที่ ${day} / ${total}</span><span>เหลืออีก ${left} วันจะหมดปีนี้ · ${leftPct}%</span></div></div>`;
+}
+
 export function renderToday() {
   const d = getData();
   const name = d.settings.name ? ` ${esc(d.settings.name)}` : '';
   return `<div class="today">
     <div><h1 class="h-page">สวัสดี${name}</h1></div>
+    ${yearBar()}
     ${weekStrip(d)}
     ${importantSection(d)}
     <div id="todo-slot">${renderTodoCard()}</div>
